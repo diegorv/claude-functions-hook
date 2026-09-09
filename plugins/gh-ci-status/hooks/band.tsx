@@ -2,7 +2,7 @@
 // O desenho da faixa acima do prompt. Recebe os elementos e o estado; não
 // conhece o engine.
 import { inFlight, phase, prNumber, type Run } from "./runs.ts";
-import { branchLabel, clock, cut, elapsed, header, linkOf, titleOf } from "./format.ts";
+import { branchLabel, clock, counts, cut, elapsed, linkOf, titleOf } from "./format.ts";
 
 export type BandProps = {
   repo: string;
@@ -25,7 +25,13 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
 
   return (
     <Box flexDirection="column">
-      <Text dimColor>{header(p.repo, p.rows)}</Text>
+      <Text dimColor>
+        {"⚙ "}
+        <Link href={`https://github.com/${p.repo}`}>{p.repo}</Link>
+        {" · "}
+        <Link href={`https://github.com/${p.repo}/actions`}>Actions</Link>
+        {counts(p.rows) ? ` · ${counts(p.rows)}` : ""}
+      </Text>
       {showWaiting ? (
         <Text
           dimColor

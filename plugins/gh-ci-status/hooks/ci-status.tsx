@@ -28,6 +28,7 @@ export const register: Register = (on) => {
 
     poller = createPoller(repo, {
       listRuns: gh.listRuns,
+      listPrs: gh.listPrs,
       now: () => $.clock.now(),
       after: (ms, fn) => $.clock.after(ms, fn),
       onChange: () => $.ui.invalidate("ui.render"),

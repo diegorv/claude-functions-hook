@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inFlight, phase, prNumber, transitions, visible } from "../hooks/runs.ts";
+import { inFlight, phase, prNumber, transitions, visible, withPrs } from "../hooks/runs.ts";
 import { run, running, T0 } from "./helpers.ts";
 
 test("inFlight: tudo que não é completed", () => {
@@ -13,6 +13,12 @@ test("prNumber: só de refs/pull/N/head", () => {
   assert.equal(prNumber(run({ databaseId: 1, headBranch: "refs/pull/167/head" })), 167);
   assert.equal(prNumber(run({ databaseId: 1, headBranch: "feat/pull/2" })), null);
   assert.equal(prNumber(run({ databaseId: 1 })), null);
+});
+
+test("withPrs: casa pela branch; prNumber prefere o casado", () => {
+  const list = withPrs([run({ databaseId: 1, headBranch: "feat/x" }), run({ databaseId: 2, headBranch: "main" })], [{ number: 42, headRefName: "feat/x" }]);
+  assert.equal(prNumber(list[0]), 42);
+  assert.equal(prNumber(list[1]), null);
 });
 
 test("phase: cores por estado", () => {

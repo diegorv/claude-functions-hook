@@ -12,17 +12,27 @@ export type Run = {
   createdAt: string;
   updatedAt: string;
   url: string; // página do run no GitHub
+  pr?: number; // preenchido por withPrs quando a branch tem um PR
 };
+
+export type Pr = { number: number; headRefName: string };
 
 export type Phase = { dot: string; label: string; color?: string; dim?: boolean };
 
 export const inFlight = (r: Run): boolean => r.status !== "completed";
 
-// O número do PR, quando o run foi disparado por um: o GitHub usa
-// `refs/pull/N/head` como branch nesses casos. Null quando não dá para saber.
+// O número do PR: o que withPrs casou pela branch, ou o N de `refs/pull/N/head`,
+// a branch que o GitHub usa em runs disparados pelo PR. Null quando não dá para saber.
 export function prNumber(r: Run): number | null {
+  if (r.pr !== undefined) return r.pr;
   const m = /^refs\/pull\/(\d+)\//.exec(r.headBranch);
   return m ? Number(m[1]) : null;
+}
+
+// Casa cada run com o PR aberto da sua branch. Sem PR, o run fica como está.
+export function withPrs(list: Run[], prs: Pr[]): Run[] {
+  const byBranch = new Map(prs.map((p) => [p.headRefName, p.number]));
+  return list.map((r) => (byBranch.has(r.headBranch) ? { ...r, pr: byBranch.get(r.headBranch) } : r));
 }
 
 export function phase(r: Run): Phase {

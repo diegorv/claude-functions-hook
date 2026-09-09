@@ -1,6 +1,6 @@
 // O loop de poll: quando consultar, o que guardar, quando avisar. Tudo que
 // toca o engine entra por `deps`, então roda em teste com um relógio falso.
-import { inFlight, phase, transitions, visible, type Run } from "./runs.ts";
+import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "./runs.ts";
 import { branchLabel, elapsed } from "./format.ts";
 
 export type PollerConfig = {
@@ -19,6 +19,7 @@ export const DEFAULT_CONFIG: PollerConfig = {
 
 export type PollerDeps = {
   listRuns: () => Promise<Run[]>;
+  listPrs: () => Promise<Pr[]>; // pode falhar: os runs ficam sem #N
   now: () => number;
   after: (ms: number, fn: () => void) => { cancel: () => void };
   onChange: () => void; // a faixa precisa redesenhar
@@ -48,7 +49,8 @@ export function createPoller(repo: string, deps: PollerDeps, cfg: PollerConfig =
   const poll = async (): Promise<boolean> => {
     let list: Run[];
     try {
-      list = await deps.listRuns();
+      const [runs, prs] = await Promise.all([deps.listRuns(), deps.listPrs().catch(() => [] as Pr[])]);
+      list = withPrs(runs, prs);
     } catch (err) {
       if (!errorShown) deps.log(err instanceof Error ? err.message : String(err));
       errorShown = true; // uma linha por pane, não uma por poll

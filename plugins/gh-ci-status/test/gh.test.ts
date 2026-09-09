@@ -16,6 +16,11 @@ test("repoName: erro do gh vira Error com o stderr", async () => {
   await assert.rejects(gh.repoName(), /no git remotes found/);
 });
 
+test("listPrs: parse do JSON", async () => {
+  const gh = createGhClient((argv) => { assert.deepEqual(argv.slice(0, 3), ["gh", "pr", "list"]); return ok('[{"number":7,"headRefName":"feat/x"}]'); }, "/repo");
+  assert.deepEqual(await gh.listPrs(), [{ number: 7, headRefName: "feat/x" }]);
+});
+
 test("listRuns: parse do JSON e limit", async () => {
   const gh = createGhClient((argv) => { assert.ok(argv.includes("--limit") && argv.includes("3")); return ok('[{"databaseId":1,"status":"completed"}]'); }, "/repo", 3);
   const runs = await gh.listRuns();

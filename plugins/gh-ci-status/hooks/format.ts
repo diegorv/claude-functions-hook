@@ -44,10 +44,9 @@ export function linkOf(repo: string, r: Run): string {
   return n === null ? r.url : `https://github.com/${repo}/pull/${n}`;
 }
 
-export function header(repo: string, rows: Run[]): string {
+// "1 running · 2 finished", só o que não é zero; vazio sem nada.
+export function counts(rows: Run[]): string {
   const running = rows.filter(inFlight).length;
   const done = rows.length - running;
-  return [`⚙ https://github.com/${repo}/actions`, running ? `${running} running` : "", done ? `${done} finished` : ""]
-    .filter(Boolean)
-    .join(" · ");
+  return [running ? `${running} running` : "", done ? `${done} finished` : ""].filter(Boolean).join(" · ");
 }

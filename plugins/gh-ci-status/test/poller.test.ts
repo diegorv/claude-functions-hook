@@ -13,6 +13,7 @@ function fakeDeps(lists: (() => Promise<any[]>)[]) {
   let i = 0;
   const deps: PollerDeps = {
     listRuns: () => lists[Math.min(i++, lists.length - 1)](),
+    listPrs: () => Promise.reject(new Error("prs off")), // falha não pode derrubar o poll
     now: () => now,
     after: (ms, fn) => { pending = { at: now + ms, fn }; return { cancel: () => { pending = null; } }; },
     onChange: () => { changes++; },

@@ -1,6 +1,6 @@
 // Cliente do `gh`. Recebe a função que executa processos em vez de `$`, para
 // o hook passar `$.process.run` e o teste passar um fake.
-import type { Run } from "./runs.ts";
+import type { Pr, Run } from "./runs.ts";
 import { cut } from "./format.ts";
 
 export type RunProcess = (
@@ -13,6 +13,7 @@ const FIELDS = "databaseId,status,conclusion,name,workflowName,headBranch,displa
 export type GhClient = {
   repoName: () => Promise<string>;
   listRuns: () => Promise<Run[]>;
+  listPrs: () => Promise<Pr[]>;
 };
 
 export function createGhClient(run: RunProcess, cwd: string, limit = 15): GhClient {
@@ -30,6 +31,11 @@ export function createGhClient(run: RunProcess, cwd: string, limit = 15): GhClie
       const r = await run(["gh", "run", "list", "--limit", String(limit), "--json", FIELDS], { cwd, timeoutMs: 25_000 });
       if (r.exitCode !== 0) throw fail(r, `exit ${r.exitCode}`);
       return JSON.parse(r.stdout) as Run[];
+    },
+    async listPrs() {
+      const r = await run(["gh", "pr", "list", "--state", "all", "--limit", "100", "--json", "number,headRefName"], { cwd, timeoutMs: 25_000 });
+      if (r.exitCode !== 0) throw fail(r, `exit ${r.exitCode}`);
+      return JSON.parse(r.stdout) as Pr[];
     },
   };
 }
