@@ -1,1 +1,1 @@
-{ "modules": ["./ci-status.tsx"] }
+{ "modules": ["../src/hooks/register.tsx"] }

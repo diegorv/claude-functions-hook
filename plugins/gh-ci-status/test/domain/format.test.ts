@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { branchLabel, clock, counts, cut, elapsed, linkOf, titleOf } from "../hooks/format.ts";
-import { run, running, T0 } from "./helpers.ts";
+import { branchLabel, clock, counts, cut, elapsed, linkOf, titleOf } from "../../src/domain/format.ts";
+import { run, running, T0 } from "../helpers.ts";
 
 test("elapsed", () => {
   assert.equal(elapsed(-5), "0m00s");
@@ -33,7 +33,10 @@ test("branchLabel e linkOf: PR quando dá, run quando não", () => {
 test("titleOf: some quando só repete o #N", () => {
   assert.equal(titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "PR #167" })), "");
   assert.equal(titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "#167" })), "");
-  assert.equal(titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "Fix login" })), "Fix login");
+  assert.equal(
+    titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "Fix login" })),
+    "Fix login",
+  );
   assert.equal(titleOf(run({ databaseId: 1, displayTitle: "PR #167" })), "PR #167", "sem PR conhecido, mantém");
 });
 

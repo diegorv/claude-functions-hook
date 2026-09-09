@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createPoller, type PollerDeps } from "../hooks/poller.ts";
-import { run, running, T0 } from "./helpers.ts";
+import { createPoller, DEFAULT_CONFIG, type PollerDeps } from "../../src/app/poller.ts";
+import { run, running, T0 } from "../helpers.ts";
 
 // Relógio falso: `after` guarda o callback, `tick` avança o tempo e dispara.
 function fakeDeps(lists: (() => Promise<any[]>)[]) {
@@ -15,19 +15,44 @@ function fakeDeps(lists: (() => Promise<any[]>)[]) {
     listRuns: () => lists[Math.min(i++, lists.length - 1)](),
     listPrs: () => Promise.reject(new Error("prs off")), // falha não pode derrubar o poll
     now: () => now,
-    after: (ms, fn) => { pending = { at: now + ms, fn }; return { cancel: () => { pending = null; } }; },
-    onChange: () => { changes++; },
-    toast: (t) => { toasts.push(t); },
-    log: (t) => { logs.push(t); },
+    after: (ms, fn) => {
+      pending = { at: now + ms, fn };
+      return {
+        cancel: () => {
+          pending = null;
+        },
+      };
+    },
+    onChange: () => {
+      changes++;
+    },
+    toast: (t) => {
+      toasts.push(t);
+    },
+    log: (t) => {
+      logs.push(t);
+    },
   };
   const flush = () => new Promise((r) => setTimeout(r, 0));
   return {
-    deps, toasts, logs,
+    deps,
+    toasts,
+    logs,
     changes: () => changes,
     nextDelay: () => (pending ? pending.at - now : null),
-    async tick() { const p = pending; pending = null; if (p) { now = p.at; p.fn(); } await flush(); },
+    async tick() {
+      const p = pending;
+      pending = null;
+      if (p) {
+        now = Math.max(now, p.at); // o relógio nunca volta
+        p.fn();
+      }
+      await flush();
+    },
     flush,
-    setNow(t: number) { now = t; },
+    setNow(t: number) {
+      now = t;
+    },
   };
 }
 
@@ -57,26 +82,26 @@ test("run que termina vira toast e ritmo cai para idle", async () => {
 });
 
 test("wake: cancela o timer, entra em waiting, e o run novo limpa o waiting", async () => {
-  const f = fakeDeps([
-    () => Promise.resolve([]),
-    () => Promise.resolve([]),
-    () => Promise.resolve([running(7)]),
-  ]);
+  const f = fakeDeps([() => Promise.resolve([]), () => Promise.resolve([]), () => Promise.resolve([running(7)])]);
   const p = createPoller("a/b", f.deps);
   p.start();
   await f.flush();
-  assert.equal(p.waiting(), false);
+  assert.equal(p.waitingSince(), null);
   p.wake();
   await f.flush();
-  assert.equal(p.waiting(), true);
+  assert.equal(p.waitingSince(), T0);
   assert.equal(f.nextDelay(), 15_000, "waiting mantém o ritmo rápido");
   await f.tick();
-  assert.equal(p.waiting(), false, "o run apareceu");
+  assert.equal(p.waitingSince(), null, "o run apareceu");
   assert.deepEqual(f.toasts, ["⚙ a/b: CI started (main)"]);
 });
 
 test("erro do gh: loga uma vez por pane e continua", async () => {
-  const f = fakeDeps([() => Promise.reject(new Error("boom")), () => Promise.reject(new Error("boom")), () => Promise.resolve([])]);
+  const f = fakeDeps([
+    () => Promise.reject(new Error("boom")),
+    () => Promise.reject(new Error("boom")),
+    () => Promise.resolve([]),
+  ]);
   const p = createPoller("a/b", f.deps);
   p.start();
   await f.flush();
@@ -84,4 +109,18 @@ test("erro do gh: loga uma vez por pane e continua", async () => {
   await f.tick();
   assert.deepEqual(f.logs, ["boom"]);
   assert.equal(p.rows().length, 0);
+});
+
+test("waiting expira depois de watchMs e o ritmo volta a idle", async () => {
+  const f = fakeDeps([() => Promise.resolve([])]);
+  const p = createPoller("a/b", f.deps);
+  p.start();
+  await f.flush();
+  p.wake();
+  await f.flush();
+  assert.equal(f.nextDelay(), 15_000);
+  f.setNow(T0 + DEFAULT_CONFIG.watchMs);
+  assert.equal(p.waitingSince(), null);
+  await f.tick();
+  assert.equal(f.nextDelay(), 60_000);
 });

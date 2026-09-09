@@ -1,4 +1,4 @@
-import type { Run } from "../hooks/runs.ts";
+import type { Run } from "../src/domain/runs.ts";
 
 export const T0 = Date.parse("2026-09-09T12:00:00Z");
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -7,7 +7,6 @@ export function run(over: Partial<Run> & { databaseId: number }): Run {
   return {
     status: "completed",
     conclusion: "success",
-    name: "CI",
     workflowName: "CI",
     headBranch: "main",
     displayTitle: "Fix login",

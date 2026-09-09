@@ -5,7 +5,6 @@ export type Run = {
   databaseId: number;
   status: string; // queued | in_progress | waiting | pending | requested | completed
   conclusion: string | null; // success | failure | cancelled | skipped | timed_out | ...
-  name: string; // nome do run: o `run-name` do workflow, quando ele define um
   workflowName: string;
   headBranch: string;
   displayTitle: string;
@@ -19,6 +18,19 @@ export type Pr = { number: number; headRefName: string };
 
 export type Phase = { dot: string; label: string; color?: string; dim?: boolean };
 
+const LABELS = {
+  running: "Running",
+  queued: "Queued",
+  success: "Success",
+  failure: "Failed",
+  timed_out: "Timed out",
+  startup_failure: "Failed",
+  cancelled: "Cancelled",
+} as const;
+
+// A coluna de status tem a largura do label mais longo.
+export const LABEL_WIDTH = Math.max(...Object.values(LABELS).map((l) => l.length));
+
 export const inFlight = (r: Run): boolean => r.status !== "completed";
 
 // O número do PR: o que withPrs casou pela branch, ou o N de `refs/pull/N/head`,
@@ -29,25 +41,25 @@ export function prNumber(r: Run): number | null {
   return m ? Number(m[1]) : null;
 }
 
-// Casa cada run com o PR aberto da sua branch. Sem PR, o run fica como está.
+// Casa cada run com o PR da sua branch. Sem PR, o run fica como está.
 export function withPrs(list: Run[], prs: Pr[]): Run[] {
   const byBranch = new Map(prs.map((p) => [p.headRefName, p.number]));
   return list.map((r) => (byBranch.has(r.headBranch) ? { ...r, pr: byBranch.get(r.headBranch) } : r));
 }
 
 export function phase(r: Run): Phase {
-  if (r.status === "in_progress") return { dot: "◐", label: "Running", color: "yellow" };
-  if (inFlight(r)) return { dot: "○", label: "Queued", color: "yellow" };
+  if (r.status === "in_progress") return { dot: "◐", label: LABELS.running, color: "yellow" };
+  if (inFlight(r)) return { dot: "○", label: LABELS.queued, color: "yellow" };
   switch (r.conclusion) {
     case "success":
-      return { dot: "●", label: "Success", color: "green" };
+      return { dot: "●", label: LABELS.success, color: "green" };
     case "failure":
-      return { dot: "✗", label: "Failed", color: "red" };
-    case "timed_out":
     case "startup_failure":
-      return { dot: "✗", label: r.conclusion, color: "red" };
+      return { dot: "✗", label: LABELS[r.conclusion], color: "red" };
+    case "timed_out":
+      return { dot: "✗", label: LABELS.timed_out, color: "red" };
     case "cancelled":
-      return { dot: "⊘", label: "Cancelled", color: "red" };
+      return { dot: "⊘", label: LABELS.cancelled, color: "red" };
     default:
       return { dot: "·", label: r.conclusion ?? "Done", dim: true };
   }

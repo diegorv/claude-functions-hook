@@ -1,4 +1,4 @@
-// Formatação de texto da faixa. Importa só o tipo Run.
+// Formatação de texto da faixa. Só funções puras sobre Run.
 import { inFlight, prNumber, type Run } from "./runs.ts";
 
 // Largura fixa até 1h (`0m10s`, `3m09s`), para as colunas alinharem.
@@ -20,26 +20,24 @@ export function cut(text: string, max: number): string {
 // Coluna de tempo: há quanto tempo roda, ou quanto levou.
 export function clock(r: Run, now: number): string {
   const started = Date.parse(r.createdAt);
-  const ended = Date.parse(r.updatedAt);
-  if (inFlight(r)) return elapsed(now - started);
-  return elapsed(ended - started);
+  return elapsed((inFlight(r) ? now : Date.parse(r.updatedAt)) - started);
 }
 
-// `refs/pull/167/head` vira `#167`; qualquer outra branch fica como está.
+// `#167` quando o run tem PR; senão o nome da branch.
 export function branchLabel(r: Run): string {
   const n = prNumber(r);
   return n === null ? r.headBranch : `#${n}`;
 }
 
-// O título da linha, ou vazio quando ele só repete o #N da coluna da branch
+// O título da linha, ou vazio quando ele só repete o #N da primeira coluna
 // (um `run-name: PR #N` no workflow faz isso).
 export function titleOf(r: Run): string {
   const n = prNumber(r);
-  if (n !== null && new RegExp(`^(PR\\s*)?#${n}$`, "i").test(r.displayTitle.trim())) return "";
-  return r.displayTitle;
+  const bare = r.displayTitle.trim().replace(/^PR\s*/i, "");
+  return n !== null && bare === `#${n}` ? "" : r.displayTitle;
 }
 
-// Para onde o título da linha leva: o PR quando se conhece, senão o run.
+// Para onde a linha leva: o PR quando se conhece, senão o run.
 export function linkOf(repo: string, r: Run): string {
   const n = prNumber(r);
   return n === null ? r.url : `https://github.com/${repo}/pull/${n}`;
