@@ -1,0 +1,10 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-function-hooks",
+  "owner": { "name": "Diego R. v." },
+  "metadata": { "description": "Function hooks do Diego para o Claude Code", "version": "0.1.0" },
+  "plugins": [
+    { "name": "Time", "source": "./plugins/time", "description": "Hora de envio acima de cada mensagem", "version": "0.1.0" },
+    { "name": "gh-ci-status", "source": "./plugins/gh-ci-status", "description": "Status dos workflows do GitHub Actions do repo da sessão, fixo acima do prompt", "version": "0.1.0" }
+  ]
+}
