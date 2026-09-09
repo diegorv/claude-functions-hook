@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { branchLabel, clock, cut, elapsed, header, linkOf, osc8 } from "../hooks/format.ts";
+import { branchLabel, clock, cut, elapsed, header, linkOf } from "../hooks/format.ts";
 import { run, running, T0 } from "./helpers.ts";
 
 test("elapsed", () => {
@@ -27,10 +27,6 @@ test("branchLabel e linkOf: PR quando dá, run quando não", () => {
   const push = run({ databaseId: 2 });
   assert.equal(branchLabel(push), "main");
   assert.equal(linkOf("a/b", push), "https://github.com/a/b/actions/runs/1");
-});
-
-test("osc8: abre e fecha o hyperlink em volta do texto", () => {
-  assert.equal(osc8("https://x/y", "#1"), "\x1b]8;;https://x/y\x07#1\x1b]8;;\x07");
 });
 
 test("header: só as contagens diferentes de zero", () => {

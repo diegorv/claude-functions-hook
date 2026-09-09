@@ -36,10 +36,6 @@ export function linkOf(repo: string, r: Run): string {
   return n === null ? r.url : `https://github.com/${repo}/pull/${n}`;
 }
 
-// Hyperlink OSC 8 em texto puro, como o próprio Claude Code emite os seus:
-// o terminal sublinha e abre com Cmd+clique. Inline, então cabe dentro de Text.
-export const osc8 = (url: string, text: string): string => `\x1b]8;;${url}\x07${text}\x1b]8;;\x07`;
-
 export function header(repo: string, rows: Run[]): string {
   const running = rows.filter(inFlight).length;
   const done = rows.length - running;
