@@ -68,7 +68,8 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
                 </Box>
                 {titleOf(r) ? (
                   <Text dimColor wrap="truncate-end">
-                    <Link href={linkOf(p.repo, r)}>{cut(titleOf(r), 60)}</Link>
+                    {/* o link fica no #N; sem PR, o título leva ao run */}
+                    {prNumber(r) !== null ? cut(titleOf(r), 60) : <Link href={linkOf(p.repo, r)}>{cut(titleOf(r), 60)}</Link>}
                   </Text>
                 ) : (
                   <Text>{""}</Text>
