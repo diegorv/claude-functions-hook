@@ -5,7 +5,8 @@ export type Run = {
   databaseId: number;
   status: string; // queued | in_progress | waiting | pending | requested | completed
   conclusion: string | null; // success | failure | cancelled | skipped | timed_out | ...
-  name: string;
+  name: string; // nome do run: o `run-name` do workflow, quando ele define um
+  workflowName: string;
   headBranch: string;
   displayTitle: string;
   createdAt: string;

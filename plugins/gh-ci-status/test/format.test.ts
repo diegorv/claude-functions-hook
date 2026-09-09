@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { branchLabel, clock, cut, elapsed, header, linkOf } from "../hooks/format.ts";
+import { branchLabel, clock, cut, elapsed, header, linkOf, titleOf } from "../hooks/format.ts";
 import { run, running, T0 } from "./helpers.ts";
 
 test("elapsed", () => {
@@ -27,6 +27,13 @@ test("branchLabel e linkOf: PR quando dá, run quando não", () => {
   const push = run({ databaseId: 2 });
   assert.equal(branchLabel(push), "main");
   assert.equal(linkOf("a/b", push), "https://github.com/a/b/actions/runs/1");
+});
+
+test("titleOf: some quando só repete o #N", () => {
+  assert.equal(titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "PR #167" })), "");
+  assert.equal(titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "#167" })), "");
+  assert.equal(titleOf(run({ databaseId: 1, headBranch: "refs/pull/167/head", displayTitle: "Fix login" })), "Fix login");
+  assert.equal(titleOf(run({ databaseId: 1, displayTitle: "PR #167" })), "PR #167", "sem PR conhecido, mantém");
 });
 
 test("header: só as contagens diferentes de zero", () => {

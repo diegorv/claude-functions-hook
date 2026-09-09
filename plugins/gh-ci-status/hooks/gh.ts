@@ -8,7 +8,7 @@ export type RunProcess = (
   init?: { cwd?: string; timeoutMs?: number },
 ) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
 
-const FIELDS = "databaseId,status,conclusion,name,headBranch,displayTitle,createdAt,updatedAt,url";
+const FIELDS = "databaseId,status,conclusion,name,workflowName,headBranch,displayTitle,createdAt,updatedAt,url";
 
 export type GhClient = {
   repoName: () => Promise<string>;

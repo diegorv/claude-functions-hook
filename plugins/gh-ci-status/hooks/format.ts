@@ -30,6 +30,14 @@ export function branchLabel(r: Run): string {
   return n === null ? r.headBranch : `#${n}`;
 }
 
+// O título da linha, ou vazio quando ele só repete o #N da coluna da branch
+// (um `run-name: PR #N` no workflow faz isso).
+export function titleOf(r: Run): string {
+  const n = prNumber(r);
+  if (n !== null && new RegExp(`^(PR\\s*)?#${n}$`, "i").test(r.displayTitle.trim())) return "";
+  return r.displayTitle;
+}
+
 // Para onde o título da linha leva: o PR quando se conhece, senão o run.
 export function linkOf(repo: string, r: Run): string {
   const n = prNumber(r);

@@ -2,7 +2,7 @@
 // O desenho da faixa acima do prompt. Recebe os elementos e o estado; não
 // conhece o engine.
 import { inFlight, phase, prNumber, type Run } from "./runs.ts";
-import { branchLabel, clock, cut, elapsed, header, linkOf } from "./format.ts";
+import { branchLabel, clock, cut, elapsed, header, linkOf, titleOf } from "./format.ts";
 
 export type BandProps = {
   repo: string;
@@ -44,16 +44,20 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
                 </Box>
                 <Box flexShrink={0}>
                   <Text dimColor>
-                    {`${cut(r.name, 20)} · `}
+                    {`${cut(r.workflowName, 20)} · `}
                     {prNumber(r) !== null ? <Link href={linkOf(p.repo, r)}>{branchLabel(r)}</Link> : cut(branchLabel(r), 28)}
                   </Text>
                 </Box>
                 <Box flexShrink={0}>
                   <Text>{clock(r, p.now)}</Text>
                 </Box>
-                <Text dimColor wrap="truncate-end">
-                  <Link href={linkOf(p.repo, r)}>{cut(r.displayTitle, 60)}</Link>
-                </Text>
+                {titleOf(r) ? (
+                  <Text dimColor wrap="truncate-end">
+                    <Link href={linkOf(p.repo, r)}>{cut(titleOf(r), 60)}</Link>
+                  </Text>
+                ) : (
+                  <Text>{""}</Text>
+                )}
               </Box>
             );
           })}

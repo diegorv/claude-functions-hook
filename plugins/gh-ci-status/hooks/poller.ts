@@ -1,7 +1,7 @@
 // O loop de poll: quando consultar, o que guardar, quando avisar. Tudo que
 // toca o engine entra por `deps`, então roda em teste com um relógio falso.
 import { inFlight, phase, transitions, visible, type Run } from "./runs.ts";
-import { elapsed } from "./format.ts";
+import { branchLabel, elapsed } from "./format.ts";
 
 export type PollerConfig = {
   activeMs: number; // intervalo com run em andamento ou push esperando
@@ -60,11 +60,11 @@ export function createPoller(repo: string, deps: PollerDeps, cfg: PollerConfig =
     seen = t.seen;
     if (t.started.length > 0) pushedAt = null; // chegou o run que o push esperava
     if (!first) {
-      for (const r of t.started) deps.toast(`⚙ ${repo}: ${r.name} started (${r.headBranch})`);
+      for (const r of t.started) deps.toast(`⚙ ${repo}: ${r.workflowName} started (${branchLabel(r)})`);
     }
     for (const r of t.finished) {
       const took = elapsed(Date.parse(r.updatedAt) - Date.parse(r.createdAt));
-      deps.toast(`⚙ ${repo}: ${r.name} ${phase(r).label} after ${took}`, 8000);
+      deps.toast(`⚙ ${repo}: ${r.workflowName} ${phase(r).label} after ${took}`, 8000);
     }
     first = false;
     rows = visible(list, deps.now(), cfg.holdMs);

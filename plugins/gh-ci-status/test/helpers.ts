@@ -8,6 +8,7 @@ export function run(over: Partial<Run> & { databaseId: number }): Run {
     status: "completed",
     conclusion: "success",
     name: "CI",
+    workflowName: "CI",
     headBranch: "main",
     displayTitle: "Fix login",
     createdAt: iso(T0),
