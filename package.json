@@ -1,0 +1,9 @@
+{
+  "name": "claude-function-hooks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'plugins/*/test/*.test.ts'",
+    "typecheck": "for p in plugins/*/tsconfig.json; do npx -y -p typescript tsc -p $p || exit 1; done"
+  }
+}
