@@ -1,12 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inFlight, phase, transitions, visible } from "../hooks/runs.ts";
+import { inFlight, phase, prNumber, transitions, visible } from "../hooks/runs.ts";
 import { run, running, T0 } from "./helpers.ts";
 
 test("inFlight: tudo que não é completed", () => {
   assert.equal(inFlight(running(1)), true);
   assert.equal(inFlight(run({ databaseId: 1, status: "queued" })), true);
   assert.equal(inFlight(run({ databaseId: 1 })), false);
+});
+
+test("prNumber: só de refs/pull/N/head", () => {
+  assert.equal(prNumber(run({ databaseId: 1, headBranch: "refs/pull/167/head" })), 167);
+  assert.equal(prNumber(run({ databaseId: 1, headBranch: "feat/pull/2" })), null);
+  assert.equal(prNumber(run({ databaseId: 1 })), null);
 });
 
 test("phase: cores por estado", () => {

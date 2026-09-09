@@ -2,7 +2,7 @@
 // O desenho da faixa acima do prompt. Recebe os elementos e o estado; não
 // conhece o engine.
 import { inFlight, phase, type Run } from "./runs.ts";
-import { clock, cut, elapsed, header } from "./format.ts";
+import { branchLabel, clock, cut, elapsed, header, linkOf } from "./format.ts";
 
 export type BandProps = {
   repo: string;
@@ -13,10 +13,10 @@ export type BandProps = {
 };
 
 // Qualquer tabela de elementos com Box e Text serve: a do terminal ou a do desktop.
-type Elements = { Box: any; Text: any };
+type Elements = { Box: any; Text: any; Link: any };
 
 // Regras do JSX deste runtime: array de .map() só dentro de Fragment; Box não aceita key.
-export function Band({ Box, Text }: Elements, p: BandProps) {
+export function Band({ Box, Text, Link }: Elements, p: BandProps) {
   const shown = p.rows.slice(0, p.maxRows);
   const hidden = p.rows.length - shown.length;
   const showWaiting = p.waitingSince !== null && !p.rows.some(inFlight);
@@ -35,9 +35,11 @@ export function Band({ Box, Text }: Elements, p: BandProps) {
           return (
             <Box gap={2}>
               <Text color={ph.color} dimColor={ph.dim}>{`${ph.dot} ${ph.label.padEnd(9)}`}</Text>
-              <Text dimColor>{`${r.name} · ${r.headBranch}`}</Text>
+              <Text dimColor>{`${r.name} · ${branchLabel(r)}`}</Text>
               <Text>{clock(r, p.now)}</Text>
-              <Text dimColor wrap="truncate-end">{cut(r.displayTitle, 60)}</Text>
+              <Text dimColor wrap="truncate-end">
+                <Link href={linkOf(p.repo, r)}>{cut(r.displayTitle, 60)}</Link>
+              </Text>
             </Box>
           );
         })}

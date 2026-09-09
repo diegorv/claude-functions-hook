@@ -10,11 +10,19 @@ export type Run = {
   displayTitle: string;
   createdAt: string;
   updatedAt: string;
+  url: string; // página do run no GitHub
 };
 
 export type Phase = { dot: string; label: string; color?: string; dim?: boolean };
 
 export const inFlight = (r: Run): boolean => r.status !== "completed";
+
+// O número do PR, quando o run foi disparado por um: o GitHub usa
+// `refs/pull/N/head` como branch nesses casos. Null quando não dá para saber.
+export function prNumber(r: Run): number | null {
+  const m = /^refs\/pull\/(\d+)\//.exec(r.headBranch);
+  return m ? Number(m[1]) : null;
+}
 
 export function phase(r: Run): Phase {
   if (r.status === "in_progress") return { dot: "◐", label: "Running", color: "yellow" };

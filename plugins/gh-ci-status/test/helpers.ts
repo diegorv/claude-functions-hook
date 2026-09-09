@@ -12,6 +12,7 @@ export function run(over: Partial<Run> & { databaseId: number }): Run {
     displayTitle: "Fix login",
     createdAt: iso(T0),
     updatedAt: iso(T0 + 60_000),
+    url: "https://github.com/a/b/actions/runs/1",
     ...over,
   };
 }

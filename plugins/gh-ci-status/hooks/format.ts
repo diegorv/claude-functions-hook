@@ -1,5 +1,5 @@
 // Formatação de texto da faixa. Importa só o tipo Run.
-import { inFlight, type Run } from "./runs.ts";
+import { inFlight, prNumber, type Run } from "./runs.ts";
 
 export function elapsed(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -22,6 +22,18 @@ export function clock(r: Run, now: number): string {
   const ended = Date.parse(r.updatedAt);
   if (inFlight(r)) return elapsed(now - started);
   return `took ${elapsed(ended - started)} · ${elapsed(now - ended)} ago`;
+}
+
+// `refs/pull/167/head` vira `#167`; qualquer outra branch fica como está.
+export function branchLabel(r: Run): string {
+  const n = prNumber(r);
+  return n === null ? r.headBranch : `#${n}`;
+}
+
+// Para onde o título da linha leva: o PR quando se conhece, senão o run.
+export function linkOf(repo: string, r: Run): string {
+  const n = prNumber(r);
+  return n === null ? r.url : `https://github.com/${repo}/pull/${n}`;
 }
 
 export function header(repo: string, rows: Run[]): string {
