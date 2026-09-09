@@ -1,0 +1,5 @@
+{
+  "name": "Time",
+  "version": "0.1.0",
+  "description": "Mostra o horário em que cada resposta do Claude chegou"
+}
