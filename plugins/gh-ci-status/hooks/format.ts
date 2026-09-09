@@ -5,8 +5,8 @@ export function elapsed(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(s / 60);
   const h = Math.floor(m / 60);
-  if (h > 0) return `${h}h ${m % 60}m`;
-  if (m > 0) return `${m}m ${s % 60}s`;
+  if (h > 0) return `${h}h${m % 60}m`;
+  if (m > 0) return `${m}m${s % 60}s`;
   return `${s}s`;
 }
 
@@ -21,7 +21,7 @@ export function clock(r: Run, now: number): string {
   const started = Date.parse(r.createdAt);
   const ended = Date.parse(r.updatedAt);
   if (inFlight(r)) return elapsed(now - started);
-  return `took ${elapsed(ended - started)} · ${elapsed(now - ended)} ago`;
+  return `${elapsed(ended - started)} · ${elapsed(now - ended)} ago`;
 }
 
 // `refs/pull/167/head` vira `#167`; qualquer outra branch fica como está.

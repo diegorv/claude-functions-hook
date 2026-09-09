@@ -51,7 +51,7 @@ test("run que termina vira toast e ritmo cai para idle", async () => {
   p.start();
   await f.flush();
   await f.tick();
-  assert.deepEqual(f.toasts, ["⚙ a/b: CI Success after 1m 30s"]);
+  assert.deepEqual(f.toasts, ["⚙ a/b: CI Success after 1m30s"]);
   assert.equal(f.nextDelay(), 60_000);
   assert.equal(p.rows().length, 1, "terminado fica na faixa dentro do hold");
 });
