@@ -1,13 +1,14 @@
 // Formatação de texto da faixa. Importa só o tipo Run.
 import { inFlight, prNumber, type Run } from "./runs.ts";
 
+// Largura fixa até 1h (`0m10s`, `3m09s`), para as colunas alinharem.
 export function elapsed(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(s / 60);
   const h = Math.floor(m / 60);
-  if (h > 0) return `${h}h${m % 60}m`;
-  if (m > 0) return `${m}m${s % 60}s`;
-  return `${s}s`;
+  const two = (n: number) => String(n).padStart(2, "0");
+  if (h > 0) return `${h}h${two(m % 60)}m`;
+  return `${m}m${two(s % 60)}s`;
 }
 
 // Primeira linha, cortada com reticências.

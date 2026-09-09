@@ -4,10 +4,11 @@ import { branchLabel, clock, counts, cut, elapsed, linkOf, titleOf } from "../ho
 import { run, running, T0 } from "./helpers.ts";
 
 test("elapsed", () => {
-  assert.equal(elapsed(-5), "0s");
-  assert.equal(elapsed(42_000), "42s");
-  assert.equal(elapsed(80_000), "1m20s");
-  assert.equal(elapsed(3_723_000), "1h2m");
+  assert.equal(elapsed(-5), "0m00s");
+  assert.equal(elapsed(9_000), "0m09s");
+  assert.equal(elapsed(42_000), "0m42s");
+  assert.equal(elapsed(189_000), "3m09s");
+  assert.equal(elapsed(3_723_000), "1h02m");
 });
 
 test("cut: primeira linha, com reticências", () => {
@@ -16,8 +17,8 @@ test("cut: primeira linha, com reticências", () => {
 });
 
 test("clock: em andamento vs terminado", () => {
-  assert.equal(clock(running(1), T0 + 42_000), "42s");
-  assert.equal(clock(run({ databaseId: 1 }), T0 + 3 * 60_000), "1m0s");
+  assert.equal(clock(running(1), T0 + 42_000), "0m42s");
+  assert.equal(clock(run({ databaseId: 1 }), T0 + 3 * 60_000), "1m00s");
 });
 
 test("branchLabel e linkOf: PR quando dá, run quando não", () => {
