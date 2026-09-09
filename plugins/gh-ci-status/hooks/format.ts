@@ -39,7 +39,7 @@ export function linkOf(repo: string, r: Run): string {
 export function header(repo: string, rows: Run[]): string {
   const running = rows.filter(inFlight).length;
   const done = rows.length - running;
-  return [`⚙ ${repo}`, running ? `${running} running` : "", done ? `${done} finished` : ""]
+  return [`⚙ https://github.com/${repo}/actions`, running ? `${running} running` : "", done ? `${done} finished` : ""]
     .filter(Boolean)
     .join(" · ");
 }

@@ -30,6 +30,6 @@ test("branchLabel e linkOf: PR quando dá, run quando não", () => {
 });
 
 test("header: só as contagens diferentes de zero", () => {
-  assert.equal(header("a/b", []), "⚙ a/b");
-  assert.equal(header("a/b", [running(1), running(2), run({ databaseId: 3 })]), "⚙ a/b · 2 running · 1 finished");
+  assert.equal(header("a/b", []), "⚙ https://github.com/a/b/actions");
+  assert.equal(header("a/b", [running(1), running(2), run({ databaseId: 3 })]), "⚙ https://github.com/a/b/actions · 2 running · 1 finished");
 });
