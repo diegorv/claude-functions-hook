@@ -17,7 +17,7 @@ test("cut: primeira linha, com reticências", () => {
 
 test("clock: em andamento vs terminado", () => {
   assert.equal(clock(running(1), T0 + 42_000), "42s");
-  assert.equal(clock(run({ databaseId: 1 }), T0 + 3 * 60_000), "1m0s · 2m0s ago");
+  assert.equal(clock(run({ databaseId: 1 }), T0 + 3 * 60_000), "1m0s");
 });
 
 test("branchLabel e linkOf: PR quando dá, run quando não", () => {

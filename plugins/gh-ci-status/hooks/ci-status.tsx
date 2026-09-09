@@ -7,6 +7,7 @@
 import type { Register } from "claude-code";
 import { createGhClient } from "./gh.ts";
 import { createPoller, type Poller } from "./poller.ts";
+import { inFlight } from "./runs.ts";
 import { isWakeCommand } from "./wake.ts";
 import { Band } from "./band.tsx";
 
@@ -37,7 +38,7 @@ export const register: Register = (on) => {
 
     // Os relógios da faixa andam entre um poll e outro.
     $.clock.every(1000, () => {
-      if (poller && (poller.rows().length > 0 || poller.waiting())) $.ui.invalidate("ui.render");
+      if (poller && (poller.rows().some(inFlight) || poller.waiting())) $.ui.invalidate("ui.render");
     });
     return next(e);
   });

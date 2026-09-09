@@ -16,12 +16,12 @@ export function cut(text: string, max: number): string {
   return one.length > max ? `${one.slice(0, max - 1)}…` : one;
 }
 
-// Coluna de tempo: há quanto tempo roda, ou quanto levou e há quanto terminou.
+// Coluna de tempo: há quanto tempo roda, ou quanto levou.
 export function clock(r: Run, now: number): string {
   const started = Date.parse(r.createdAt);
   const ended = Date.parse(r.updatedAt);
   if (inFlight(r)) return elapsed(now - started);
-  return `${elapsed(ended - started)} · ${elapsed(now - ended)} ago`;
+  return elapsed(ended - started);
 }
 
 // `refs/pull/167/head` vira `#167`; qualquer outra branch fica como está.
