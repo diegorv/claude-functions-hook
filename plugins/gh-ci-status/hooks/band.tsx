@@ -53,12 +53,12 @@ export function Band({ Box, Text }: Elements, p: BandProps) {
                 <Box flexShrink={0}>
                   <Text>{clock(r, p.now)}</Text>
                 </Box>
-                <Box flexShrink={0}>
-                  <Text dimColor>{cut(r.displayTitle, 40)}</Text>
-                </Box>
                 <Text dimColor wrap="truncate-end">
-                  {linkOf(p.repo, r)}
+                  {cut(r.displayTitle, 40)}
                 </Text>
+                <Box flexShrink={0}>
+                  <Text dimColor>{linkOf(p.repo, r)}</Text>
+                </Box>
               </Box>
             );
           })}
