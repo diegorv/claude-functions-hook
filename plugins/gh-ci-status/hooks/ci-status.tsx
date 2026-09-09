@@ -21,10 +21,10 @@ export const register: Register = (on) => {
     try {
       repo = await gh.repoName();
     } catch (err) {
-      $.ui.log(`gh-ci-status: ${err instanceof Error ? err.message : String(err)}; staying quiet`);
+      $.ui.log(`${err instanceof Error ? err.message : String(err)}; staying quiet`);
       return next(e);
     }
-    $.ui.log(`gh-ci-status: watching ${repo}`);
+    $.ui.log(`watching ${repo}`);
 
     poller = createPoller(repo, {
       listRuns: gh.listRuns,

@@ -33,10 +33,16 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
         {shown.map((r) => {
           const ph = phase(r);
           return (
-            <Box gap={2}>
-              <Text color={ph.color} dimColor={ph.dim}>{`${ph.dot} ${ph.label.padEnd(9)}`}</Text>
-              <Text dimColor>{`${r.name} · ${branchLabel(r)}`}</Text>
-              <Text>{clock(r, p.now)}</Text>
+            <Box gap={2} flexWrap="nowrap">
+              <Box flexShrink={0}>
+                <Text color={ph.color} dimColor={ph.dim}>{`${ph.dot} ${ph.label.padEnd(9)}`}</Text>
+              </Box>
+              <Box flexShrink={0}>
+                <Text dimColor>{cut(`${r.name} · ${branchLabel(r)}`, 36)}</Text>
+              </Box>
+              <Box flexShrink={0}>
+                <Text>{clock(r, p.now)}</Text>
+              </Box>
               <Text dimColor wrap="truncate-end">
                 <Link href={linkOf(p.repo, r)}>{cut(r.displayTitle, 60)}</Link>
               </Text>

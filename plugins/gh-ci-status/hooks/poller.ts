@@ -50,7 +50,7 @@ export function createPoller(repo: string, deps: PollerDeps, cfg: PollerConfig =
     try {
       list = await deps.listRuns();
     } catch (err) {
-      if (!errorShown) deps.log(`gh-ci-status: ${err instanceof Error ? err.message : String(err)}`);
+      if (!errorShown) deps.log(err instanceof Error ? err.message : String(err));
       errorShown = true; // uma linha por pane, não uma por poll
       return waiting();
     }

@@ -81,6 +81,6 @@ test("erro do gh: loga uma vez por pane e continua", async () => {
   await f.flush();
   await f.tick();
   await f.tick();
-  assert.deepEqual(f.logs, ["gh-ci-status: boom"]);
+  assert.deepEqual(f.logs, ["boom"]);
   assert.equal(p.rows().length, 0);
 });
