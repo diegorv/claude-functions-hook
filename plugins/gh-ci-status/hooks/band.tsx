@@ -23,6 +23,13 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
   const hidden = p.rows.length - shown.length;
   const showWaiting = p.waitingSince !== null && !p.rows.some(inFlight);
 
+  // Larguras das duas primeiras colunas: o maior valor entre as linhas
+  // visíveis, para os status alinharem; a branch tem um teto.
+  const refs = shown.map((r) => cut(branchLabel(r), 24));
+  const refWidth = Math.max(4, ...refs.map((t) => t.length));
+  const wfWidth = Math.max(2, ...shown.map((r) => cut(r.workflowName, 20).length));
+  const pad = (n: number) => " ".repeat(Math.max(0, n));
+
   return (
     <Box flexDirection="column">
       <Text dimColor>
@@ -33,26 +40,28 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
         {counts(p.rows) ? ` · ${counts(p.rows)}` : ""}
       </Text>
       {showWaiting ? (
-        <Text
-          dimColor
-        >{`◌ waiting for a run   ${elapsed(p.now - p.waitingSince!)}`}</Text>
+        <Text dimColor>{`◌ waiting for a run   ${elapsed(p.now - p.waitingSince!)}`}</Text>
       ) : (
         <Text>{""}</Text>
       )}
       <Box flexDirection="column">
         <>
-          {shown.map((r) => {
+          {shown.map((r, i) => {
             const ph = phase(r);
+            const ref = refs[i];
             return (
               <Box gap={2} flexWrap="nowrap">
+                <Box flexShrink={0}>
+                  <Text>
+                    {prNumber(r) !== null ? <Link href={linkOf(p.repo, r)}>{ref}</Link> : <Text dimColor>{ref}</Text>}
+                    {pad(refWidth - ref.length)}
+                  </Text>
+                </Box>
                 <Box flexShrink={0}>
                   <Text color={ph.color} dimColor={ph.dim}>{`${ph.dot} ${ph.label.padEnd(9)}`}</Text>
                 </Box>
                 <Box flexShrink={0}>
-                  <Text dimColor>
-                    {`${cut(r.workflowName, 20)} · `}
-                    {prNumber(r) !== null ? <Link href={linkOf(p.repo, r)}>{branchLabel(r)}</Link> : cut(branchLabel(r), 28)}
-                  </Text>
+                  <Text dimColor>{cut(r.workflowName, 20).padEnd(wfWidth)}</Text>
                 </Box>
                 <Box flexShrink={0}>
                   <Text>{clock(r, p.now)}</Text>

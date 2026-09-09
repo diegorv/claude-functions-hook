@@ -24,8 +24,6 @@ export const register: Register = (on) => {
       $.ui.log(`${err instanceof Error ? err.message : String(err)}; staying quiet`);
       return next(e);
     }
-    $.ui.log(`watching ${repo}`);
-
     poller = createPoller(repo, {
       listRuns: gh.listRuns,
       listPrs: gh.listPrs,
