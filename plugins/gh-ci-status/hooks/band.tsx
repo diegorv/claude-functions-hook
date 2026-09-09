@@ -61,7 +61,10 @@ export function Band({ Box, Text, Link }: Elements, p: BandProps) {
                   <Text color={ph.color} dimColor={ph.dim}>{`${ph.dot} ${ph.label.padEnd(9)}`}</Text>
                 </Box>
                 <Box flexShrink={0}>
-                  <Text dimColor>{cut(r.workflowName, 20).padEnd(wfWidth)}</Text>
+                  <Text dimColor>
+                    <Link href={r.url}>{cut(r.workflowName, 20)}</Link>
+                    {pad(wfWidth - cut(r.workflowName, 20).length)}
+                  </Text>
                 </Box>
                 <Box flexShrink={0}>
                   <Text>{clock(r, p.now)}</Text>
