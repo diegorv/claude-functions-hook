@@ -162,6 +162,19 @@ test("waiting expires after watchMs and the pace goes back to idle", async () =>
   assert.equal(engine.nextDelay(), DEFAULT_CONFIG.idleMs);
 });
 
+test("a cron run neither shows nor toasts", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([]),
+    () => Promise.resolve([running({ databaseId: 7, event: "schedule" })]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  await engine.tick();
+  assert.equal(poller.rows().length, 0);
+  assert.deepEqual(engine.toasts, []);
+});
+
 test("a finished row leaves rows() after holdMs even when gh is down", async () => {
   const engine = fakeEngine([
     () => Promise.resolve([run({ updatedAt: at(0) })]),

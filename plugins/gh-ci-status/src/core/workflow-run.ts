@@ -5,6 +5,7 @@ export type Run = {
   databaseId: number;
   status: "queued" | "in_progress" | "waiting" | "pending" | "requested" | "completed";
   conclusion: string | null; // success | failure | cancelled | skipped | timed_out | ...
+  event: string; // what triggered the run: push, pull_request, schedule, issue_comment, ...
   workflowName: string;
   headBranch: string;
   displayTitle: string;
@@ -34,6 +35,18 @@ const LABELS = {
 export const LABEL_WIDTH = Math.max(...Object.values(LABELS).map((label) => label.length));
 
 export const inFlight = (run: Run): boolean => run.status !== "completed";
+
+// Runs a person starts from the terminal stay on the band; cron, issue bots and the like do not.
+const PERSON_EVENTS = new Set([
+  "push",
+  "pull_request",
+  "pull_request_target",
+  "workflow_dispatch",
+  "merge_group",
+  "release",
+  "workflow_run",
+]);
+export const startedByPerson = (run: Run): boolean => PERSON_EVENTS.has(run.event);
 
 // The PR number: what withPrs matched by branch, or the N in `refs/pull/N/head`,
 // the branch GitHub uses for runs a PR triggered. Null when there is no way to know.

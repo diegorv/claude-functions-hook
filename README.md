@@ -26,7 +26,10 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   `gh workflow run` or `gh run rerun` in Bash wakes it.
 - `#N` links to the PR (matched by branch through `gh pr list`, or from
   `refs/pull/N/head`); the workflow name links to the run.
-- Toasts when a run starts or finishes. A finished run stays for 5 minutes.
+- Shows runs from a push, a pull request, a manual dispatch, the merge
+  queue, a release, or a workflow another one started, and leaves cron and
+  issue bots out. Toasts when a run starts or finishes. A finished run stays
+  for 5 minutes.
 
 ## Use
 

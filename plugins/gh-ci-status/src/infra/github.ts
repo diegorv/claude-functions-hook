@@ -10,7 +10,7 @@ type GitHubLimits = { runs: number; prs: number };
 const DEFAULT_LIMITS: GitHubLimits = { runs: 15, prs: 100 };
 
 const RUN_FIELDS =
-  "databaseId,status,conclusion,workflowName,headBranch,displayTitle,createdAt,startedAt,updatedAt,url";
+  "databaseId,status,conclusion,event,workflowName,headBranch,displayTitle,createdAt,startedAt,updatedAt,url";
 const PR_FIELDS = "number,headRefName,isCrossRepository";
 
 type GitHubClient = {

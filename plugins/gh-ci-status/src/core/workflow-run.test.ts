@@ -1,12 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inFlight, phase, prNumber, transitions, visible, withPrs } from "./workflow-run.ts";
+import { inFlight, phase, prNumber, startedByPerson, transitions, visible, withPrs } from "./workflow-run.ts";
 import { at, run, running, T0 } from "./fixtures.ts";
 
 test("inFlight: anything not completed", () => {
   assert.equal(inFlight(running()), true);
   assert.equal(inFlight(run({ status: "queued" })), true);
   assert.equal(inFlight(run()), false);
+});
+
+test("startedByPerson: push and PR runs yes, schedule and issue_comment no", () => {
+  assert.equal(startedByPerson(run({ event: "push" })), true);
+  assert.equal(startedByPerson(run({ event: "pull_request" })), true);
+  assert.equal(startedByPerson(run({ event: "schedule" })), false);
+  assert.equal(startedByPerson(run({ event: "issue_comment" })), false);
 });
 
 test("prNumber: from the pr field, or from refs/pull/N/head", () => {

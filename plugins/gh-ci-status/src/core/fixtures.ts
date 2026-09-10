@@ -9,6 +9,7 @@ export function run(overrides: Partial<Run> = {}): Run {
     databaseId: 1,
     status: "completed",
     conclusion: "success",
+    event: "push",
     workflowName: "CI",
     headBranch: "main",
     displayTitle: "Fix login",

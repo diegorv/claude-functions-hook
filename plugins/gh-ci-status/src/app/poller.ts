@@ -1,6 +1,15 @@
 // The poll loop: when to ask, what to keep, when to notify. Everything that
 // touches the engine comes in through `deps`, so tests run it on a fake clock.
-import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "../core/workflow-run.ts";
+import {
+  inFlight,
+  phase,
+  startedByPerson,
+  transitions,
+  visible,
+  withPrs,
+  type Pr,
+  type Run,
+} from "../core/workflow-run.ts";
 import { branchLabel, clock } from "../core/run-labels.ts";
 import { cut } from "../utils/text.ts";
 
@@ -56,7 +65,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     try {
       const [runs, prs] = await Promise.all([deps.listRuns(), deps.listPrs().catch(() => [] as Pr[])]);
       errorLogged = false;
-      return withPrs(runs, prs);
+      return withPrs(runs.filter(startedByPerson), prs);
     } catch (error) {
       if (!errorLogged) deps.log(error instanceof Error ? error.message : String(error));
       errorLogged = true;
