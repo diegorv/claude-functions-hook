@@ -162,6 +162,19 @@ test("waiting expires after watchMs and the pace goes back to idle", async () =>
   assert.equal(engine.nextDelay(), DEFAULT_CONFIG.idleMs);
 });
 
+test("a finished row leaves rows() after holdMs even when gh is down", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([run({ updatedAt: at(0) })]),
+    () => Promise.reject(new Error("gh: offline")),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  engine.setNow(T0 + DEFAULT_CONFIG.holdMs + 1);
+  await engine.tick();
+  assert.equal(poller.rows().length, 0, "the hold is over, even with no fresh list");
+});
+
 test("a gh error is logged once per outage and polling continues", async () => {
   const engine = fakeEngine([
     () => Promise.reject(new Error("boom")),

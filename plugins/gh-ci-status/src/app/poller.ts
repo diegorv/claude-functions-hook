@@ -105,7 +105,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
       timer = null;
       void loop();
     },
-    rows: () => rows,
+    rows: () => visible(rows, deps.now(), config.holdMs),
     waitingSince,
     live,
   };
