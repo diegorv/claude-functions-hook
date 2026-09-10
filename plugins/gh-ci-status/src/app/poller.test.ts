@@ -177,15 +177,17 @@ test("a finished row leaves rows() after holdMs even when gh is down", async () 
 
 test("a gh error is logged once per outage and polling continues", async () => {
   const engine = fakeEngine([
-    () => Promise.reject(new Error("boom")),
-    () => Promise.reject(new Error("boom")),
+    () => Promise.reject(new Error("a")),
+    () => Promise.reject(new Error("a")),
     () => Promise.resolve([]),
+    () => Promise.reject(new Error("b")),
   ]);
   const poller = createPoller("a/b", engine.deps);
   poller.start();
   await engine.settle();
   await engine.tick();
   await engine.tick();
-  assert.deepEqual(engine.logs, ["boom"]);
+  await engine.tick();
+  assert.deepEqual(engine.logs, ["a", "b"], "a poll that works ends the outage, so the next one logs again");
   assert.equal(poller.rows().length, 0);
 });
