@@ -1,8 +1,7 @@
 // The poll loop: when to ask, what to keep, when to notify. Everything that
 // touches the engine comes in through `deps`, so tests run it on a fake clock.
 import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "../core/workflow-run.ts";
-import { branchLabel } from "../core/run-labels.ts";
-import { elapsed } from "../utils/text.ts";
+import { branchLabel, clock } from "../core/run-labels.ts";
 
 export type PollerConfig = {
   activeMs: number; // interval while a run is in flight or a push is waiting
@@ -69,8 +68,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
       for (const run of started) deps.toast(`⚙ ${repo}: ${run.workflowName} started (${branchLabel(run)})`);
     }
     for (const run of finished) {
-      const took = elapsed(Date.parse(run.updatedAt) - Date.parse(run.createdAt));
-      deps.toast(`⚙ ${repo}: ${run.workflowName} ${phase(run).label} after ${took}`, 8000);
+      deps.toast(`⚙ ${repo}: ${run.workflowName} ${phase(run).label} after ${clock(run, deps.now())}`, 8000);
     }
     firstPoll = false;
   };

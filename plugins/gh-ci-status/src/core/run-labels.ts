@@ -4,7 +4,7 @@ import { elapsed } from "../utils/text.ts";
 
 // The time column: how long the run has been going, or how long it took.
 export function clock(run: Run, now: number): string {
-  const startedAt = Date.parse(run.createdAt);
+  const startedAt = Date.parse(run.startedAt);
   const endedAt = inFlight(run) ? now : Date.parse(run.updatedAt);
   return elapsed(endedAt - startedAt);
 }

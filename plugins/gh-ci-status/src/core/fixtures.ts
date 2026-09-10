@@ -13,6 +13,7 @@ export function run(overrides: Partial<Run> = {}): Run {
     headBranch: "main",
     displayTitle: "Fix login",
     createdAt: at(0),
+    startedAt: at(0),
     updatedAt: at(60_000),
     url: "https://github.com/a/b/actions/runs/1",
     ...overrides,

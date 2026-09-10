@@ -12,7 +12,8 @@ export type RunProcess = (
 export type GitHubLimits = { runs: number; prs: number };
 export const DEFAULT_LIMITS: GitHubLimits = { runs: 15, prs: 100 };
 
-const RUN_FIELDS = "databaseId,status,conclusion,workflowName,headBranch,displayTitle,createdAt,updatedAt,url";
+const RUN_FIELDS =
+  "databaseId,status,conclusion,workflowName,headBranch,displayTitle,createdAt,startedAt,updatedAt,url";
 const PR_FIELDS = "number,headRefName,isCrossRepository";
 
 export type GitHubClient = {

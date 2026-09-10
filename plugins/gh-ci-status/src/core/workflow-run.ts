@@ -9,6 +9,7 @@ export type Run = {
   headBranch: string;
   displayTitle: string;
   createdAt: string;
+  startedAt: string; // start of the latest attempt; a rerun keeps createdAt
   updatedAt: string;
   url: string; // the run's page on GitHub
   pr?: number; // filled in by withPrs when the branch has a PR

@@ -8,6 +8,11 @@ test("clock: in flight counts up to now; finished shows the duration", () => {
   assert.equal(clock(run(), T0 + 3 * 60_000), "1m00s");
 });
 
+test("clock: a rerun counts from startedAt", () => {
+  const rerun = run({ createdAt: at(-86_400_000), startedAt: at(0), updatedAt: at(42_000) });
+  assert.equal(clock(rerun, T0 + 60_000), "0m42s");
+});
+
 test("branchLabel and linkOf: the PR when known, the run otherwise", () => {
   const prRun = run({ headBranch: "refs/pull/167/head" });
   assert.equal(branchLabel(prRun), "#167");
