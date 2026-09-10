@@ -1,9 +1,9 @@
 /** @jsx h */
 // Wires the pieces to the engine: three hooks, no logic of its own.
 //
-//   session.start  finds the repo through its remote and starts the poller
-//   tool.call      a push or merge in Bash wakes the poller
-//   ui.render      draws the band above the prompt from the poller's state
+//   session.start        finds the repo through its remote and starts the poller
+//   classic.PostToolUse  a push or merge in Bash wakes the poller
+//   ui.render            draws the band above the prompt from the poller's state
 import type { Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, type Poller } from "../app/poller.ts";
@@ -45,11 +45,11 @@ export const register: Register = (on) => {
     return next(event);
   });
 
-  on("tool.call", { tool: "Bash" }, async ($, event, next) => {
-    if (!triggersWorkflow(event.command)) return next(event);
-    const result = await next(event); // the push has to finish before GitHub has anything to say
-    if (!result.deny && !result.isError) watch?.poller.wake();
-    return result;
+  // classic.PostToolUse fires after the tool succeeded, so a denied or failed push never gets here.
+  on("classic.PostToolUse", { tool_name: "Bash" }, ($, event, next) => {
+    const command = (event.tool_input as { command?: unknown }).command;
+    if (watch && typeof command === "string" && triggersWorkflow(command)) watch.poller.wake();
+    return next(event);
   });
 
   on("ui.render", { component: "AbovePrompt", surface: "terminal" }, async ($, event, next) => {
