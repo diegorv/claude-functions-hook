@@ -14,6 +14,7 @@ test("push, merge and workflow run trigger a workflow", () => {
     "gh run rerun 123",
     "git commit -m 'fix --dry-run' && git push",
     "git push --dry-run && git push",
+    "git push -u origin feat 2>&1 | tail -n 20",
   ];
   for (const command of commands) assert.equal(triggersWorkflow(command), true, command);
 });

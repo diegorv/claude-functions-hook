@@ -7,4 +7,4 @@ const TRIGGERS =
 const DRY_RUN = /push\b.*(--dry-run|\s-n\b)/;
 
 export const triggersWorkflow = (command: string): boolean =>
-  command.split(/&&|\|\||;/).some((segment) => TRIGGERS.test(segment) && !DRY_RUN.test(segment));
+  command.split(/&&|\||;/).some((segment) => TRIGGERS.test(segment) && !DRY_RUN.test(segment));
