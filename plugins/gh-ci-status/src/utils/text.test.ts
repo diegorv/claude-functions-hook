@@ -15,6 +15,10 @@ test("cut: first line, with an ellipsis", () => {
   assert.equal(cut("abcdefghij", 5), "abcd…");
 });
 
+test("cut: counts characters, not code units", () => {
+  assert.equal(cut("🚀🚀🚀🚀🚀", 4), "🚀🚀🚀…");
+});
+
 test("cut: control characters are dropped", () => {
   assert.equal(
     cut("a\x1b[31mb\rc", 10),

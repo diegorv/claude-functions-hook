@@ -16,5 +16,6 @@ export function cut(text: string, maxLength: number): string {
     .split("\n")[0]
     .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, "")
     .trim();
-  return firstLine.length > maxLength ? `${firstLine.slice(0, maxLength - 1)}…` : firstLine;
+  const chars = Array.from(firstLine);
+  return chars.length > maxLength ? `${chars.slice(0, maxLength - 1).join("")}…` : firstLine;
 }
