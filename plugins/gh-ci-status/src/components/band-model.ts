@@ -2,7 +2,7 @@
 // maps this to elements and decides nothing, so this is where the drawing is
 // tested.
 import { inFlight, phase, prNumber, LABEL_WIDTH, type Phase, type Run } from "../core/workflow-run.ts";
-import { branchLabel, clock, counts, linkOf, titleOf, workflowLabel } from "../core/run-labels.ts";
+import { branchLabel, clock, counts, linkOf, REF_MAX, titleOf, workflowLabel } from "../core/run-labels.ts";
 import { cut, elapsed } from "../utils/text.ts";
 
 export type BandInput = {
@@ -34,7 +34,6 @@ export type BandModel = {
   hiddenCount: number;
 };
 
-const REF_MAX = 24;
 const WORKFLOW_MAX = 20;
 const TITLE_MAX = 60;
 

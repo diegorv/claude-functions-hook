@@ -188,6 +188,19 @@ test("a finished row leaves rows() after holdMs even when gh is down", async () 
   assert.equal(poller.rows().length, 0, "the hold is over, even with no fresh list");
 });
 
+test("a started toast cuts a long branch like the band does", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([]),
+    () => Promise.resolve([running({ headBranch: "x".repeat(40) })]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  await engine.tick();
+  assert.ok(engine.toasts[0].includes(`${"x".repeat(23)}…`), engine.toasts[0]);
+  assert.ok(!engine.toasts[0].includes("x".repeat(24)), engine.toasts[0]);
+});
+
 test("a throw after the fetch is logged and the loop goes on", async () => {
   const engine = fakeEngine([() => Promise.resolve([]), () => Promise.resolve([running()])]);
   const poller = createPoller("a/b", engine.deps);

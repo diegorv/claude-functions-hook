@@ -11,6 +11,8 @@ export function clock(run: Run, now: number): string {
 
 export const workflowLabel = (run: Run): string => run.workflowName || "workflow"; // runs of organization rulesets come without a name
 
+export const REF_MAX = 24; // the ref column's width, on the band and in a toast
+
 // `#167` when the run has a PR; otherwise the branch name.
 export function branchLabel(run: Run): string {
   const number = prNumber(run);
