@@ -3,7 +3,7 @@
 
 export type Run = {
   databaseId: number;
-  status: string; // queued | in_progress | waiting | pending | requested | completed
+  status: "queued" | "in_progress" | "waiting" | "pending" | "requested" | "completed";
   conclusion: string | null; // success | failure | cancelled | skipped | timed_out | ...
   workflowName: string;
   headBranch: string;
