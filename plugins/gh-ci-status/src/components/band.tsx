@@ -4,14 +4,15 @@
 // JSX rules of this runtime: a .map() array only inside a Fragment, and a bare
 // Fragment lays out as a row Box, so it lives inside a column Box; Box takes
 // no key; an empty conditional branch draws an empty Text.
+import type { Elements as EngineElements, RenderChildren } from "claude-code";
 import type { BandModel, Cell } from "./band-model.ts";
 
-// The surface's element table (terminal or desktop); only these three are used.
-type Elements = { Box: any; Text: any; Link: any };
+// The surface's element table; the band draws on the terminal and uses three.
+type Elements = Pick<EngineElements["terminal"], "Box" | "Text" | "Link">;
 
 export function Band({ Box, Text, Link }: Elements, model: BandModel) {
   const blank = () => <Text>{""}</Text>;
-  const column = (child: unknown) => <Box flexShrink={0}>{child}</Box>;
+  const column = (child: RenderChildren) => <Box flexShrink={0}>{child}</Box>;
   const anchor = (cell: Cell) =>
     cell.href ? <Link href={cell.href}>{cell.text}</Link> : <Text dimColor>{cell.text}</Text>;
 
