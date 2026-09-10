@@ -27,7 +27,10 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 
 - Finds the repo the way `gh` does (`gh repo view`, the default remote), so
   `gh` must be on your `PATH` and logged in. Without a GitHub remote it logs
-  one line and stays quiet.
+  one line and stays quiet. The check runs once, at session start, so a
+  failure there, no network or an expired token, keeps it quiet for the
+  whole session: after `gh auth login`, or once the network is back,
+  restart the session or edit a hook module to reload the plugin.
 - Polls `gh run list` every 60 s, and every 15 s while a run is in flight or
   for 6 minutes after a push. A `git push`, `git subtree push`, `gh pr merge`,
   `gh workflow run` or `gh run rerun` in Bash wakes it.
