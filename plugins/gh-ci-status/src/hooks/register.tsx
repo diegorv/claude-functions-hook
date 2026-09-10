@@ -60,7 +60,7 @@ export const register: Register = (on) => {
       rows: poller.rows(),
       waitingSince: poller.waitingSince(),
       now: $.clock.now(),
-      maxRows: MAX_ROWS,
+      maxRows: Math.max(1, Math.min(MAX_ROWS, event.props.maxRows - 3)), // header, waiting line, "more" line
     });
     return model ? Band($.ui.resolve(event), model) : next(event);
   });
