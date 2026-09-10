@@ -5,6 +5,7 @@
     "types": [],
     "module": "esnext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
@@ -12,5 +13,6 @@
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment"
   },
-  "include": ["../../.claude/types", "hooks"]
+  "include": ["../../.claude/types", "src"],
+  "exclude": ["src/**/*.test.ts"]
 }
