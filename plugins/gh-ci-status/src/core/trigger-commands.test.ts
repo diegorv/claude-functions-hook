@@ -27,6 +27,8 @@ test("other commands and dry runs do not", () => {
     "git push --dry-run",
     "git push -n origin main",
     "gh pr view",
+    "git commit -m 'docs: explain git push flow'",
+    "git commit -m \"$(cat <<'EOF'\n...wakes on git push / gh pr merge...\nEOF\n)\"",
   ];
   for (const command of commands) assert.equal(triggersWorkflow(command), false, command);
 });
