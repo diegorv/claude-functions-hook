@@ -41,7 +41,17 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 ## Use
 
 ```bash
+# a folder of plugins needs Claude Code 2.1.265 or later
 CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1 claude --plugin-dir /path/to/claude-function-hooks/plugins
+```
+
+Or install them from the marketplace, in a session started with the same
+flag:
+
+```
+/plugin marketplace add diegorv/claude-functions-hook
+/plugin install gh-ci-status@claude-function-hooks
+/plugin install time@claude-function-hooks
 ```
 
 Edits to a hook module reload without restarting the session.
