@@ -18,10 +18,12 @@ between releases.
 main  ● Success    Deploy   2m15s  Release 1.4.0
 ```
 
-- Finds the repo through the `origin` remote with `gh`, so `gh` must be on
-  your `PATH` and logged in. Without a GitHub remote it stays quiet.
-- Polls `gh run list` every 60 s, and every 15 s while a run is in flight.
-  A `git push`, `gh pr merge` or `gh workflow run` in Bash wakes it.
+- Finds the repo the way `gh` does (`gh repo view`, the default remote), so
+  `gh` must be on your `PATH` and logged in. Without a GitHub remote it logs
+  one line and stays quiet.
+- Polls `gh run list` every 60 s, and every 15 s while a run is in flight or
+  for 6 minutes after a push. A `git push`, `git subtree push`, `gh pr merge`,
+  `gh workflow run` or `gh run rerun` in Bash wakes it.
 - `#N` links to the PR (matched by branch through `gh pr list`, or from
   `refs/pull/N/head`); the workflow name links to the run.
 - Toasts when a run starts or finishes. A finished run stays for 5 minutes.
