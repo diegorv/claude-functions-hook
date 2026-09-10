@@ -86,6 +86,8 @@ export type Transitions = {
 
 // Compares what was in flight with the new list. Pure: returns the new set
 // instead of mutating the old one.
+// ponytail: only what the list returns; a run pushed out by 15 newer ones ends
+// silently. gh run view <id> per orphan if it ever matters.
 export function transitions(seen: ReadonlySet<number>, runs: Run[]): Transitions {
   const nextSeen = new Set<number>();
   const started: Run[] = [];
