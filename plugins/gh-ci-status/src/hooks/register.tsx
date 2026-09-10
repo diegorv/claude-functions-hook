@@ -1,4 +1,3 @@
-/** @jsx h */
 // Wires the pieces to the engine: three hooks, no logic of its own.
 //
 //   session.start        finds the repo through its remote and starts the poller

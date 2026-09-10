@@ -1,4 +1,3 @@
-/** @jsx h */
 // A time line drawn above another element.
 import type { Elements as EngineElements, RenderChildren } from "claude-code";
 type Elements = Pick<EngineElements["terminal"], "Box" | "Text">;

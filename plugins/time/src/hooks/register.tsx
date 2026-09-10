@@ -1,4 +1,3 @@
-/** @jsx h */
 // Wires the piece to the engine: one hook.
 //
 //   ui.render on UserMessage  draws the time above the message

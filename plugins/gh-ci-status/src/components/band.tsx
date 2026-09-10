@@ -1,4 +1,3 @@
-/** @jsx h */
 // Maps the band's view model to elements. No decisions here: see band-model.ts.
 //
 // JSX rules of this runtime: a .map() array only inside a Fragment, and a bare
