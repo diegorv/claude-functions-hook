@@ -2,7 +2,7 @@
 
 // Fixed width below one hour (`0m10s`, `3m09s`) so columns line up.
 export function elapsed(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const totalSeconds = Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
   const totalMinutes = Math.floor(totalSeconds / 60);
   const hours = Math.floor(totalMinutes / 60);
   const twoDigits = (value: number) => String(value).padStart(2, "0");

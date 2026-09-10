@@ -8,6 +8,7 @@ test("elapsed: fixed width, zero padded", () => {
   assert.equal(elapsed(42_000), "0m42s");
   assert.equal(elapsed(189_000), "3m09s");
   assert.equal(elapsed(3_723_000), "1h02m");
+  assert.equal(elapsed(NaN), "0m00s", "an unparsable date must not print NaNmNaNs");
 });
 
 test("cut: first line, with an ellipsis", () => {
