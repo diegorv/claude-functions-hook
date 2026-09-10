@@ -1,5 +1,5 @@
 {
   "name": "gh-ci-status",
   "version": "0.1.0",
-  "description": "Status dos workflows do GitHub Actions do repo da sessão, fixo acima do prompt"
+  "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run"
 }

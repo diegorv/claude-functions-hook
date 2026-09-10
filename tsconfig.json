@@ -13,6 +13,6 @@
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment"
   },
-  "include": ["../../.claude/types", "src"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": [".claude/types", "plugins/*/src"],
+  "exclude": ["**/*.test.ts"]
 }

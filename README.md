@@ -38,7 +38,7 @@ Edits to a hook module reload without restarting the session.
 
 ```bash
 npm test           # node --test, no dependencies
-npm run typecheck  # tsc per plugin
+npm run typecheck  # tsc
 npm run format     # prettier
 npm run validate   # claude plugin validate
 ```

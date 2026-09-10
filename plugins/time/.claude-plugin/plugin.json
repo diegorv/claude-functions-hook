@@ -1,5 +1,5 @@
 {
-  "name": "Time",
+  "name": "time",
   "version": "0.1.0",
-  "description": "Draws the time you sent each message above it"
+  "description": "The time you sent each message, drawn above it"
 }
