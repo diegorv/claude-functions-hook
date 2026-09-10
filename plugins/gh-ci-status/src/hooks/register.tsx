@@ -18,31 +18,29 @@ export const register: Register = (on) => {
   // Set by session.start; null until then, or when there is no GitHub repo.
   let watch: { repo: string; poller: Poller } | null = null;
 
-  on("session.start", async ($, event, next) => {
+  on("session.start", ($, event, next) => {
     const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
-    let repo: string;
-    try {
-      repo = await github.repoName();
-    } catch (error) {
-      $.ui.log(`${error instanceof Error ? error.message : String(error)}; staying quiet`);
-      return next(event);
-    }
 
-    const poller = createPoller(repo, {
-      listRuns: github.listRuns,
-      listPrs: github.listPrs,
-      now: () => $.clock.now(),
-      after: (ms, callback) => $.clock.after(ms, callback),
-      onChange: () => $.ui.invalidate("ui.render"),
-      toast: (text, timeoutMs) => $.ui.toast(text, timeoutMs ? { timeoutMs } : undefined),
-      log: (text) => $.ui.log(text),
-    });
-    watch = { repo, poller };
-    poller.start();
-
-    $.clock.every(TICK_MS, () => {
-      if (poller.live()) $.ui.invalidate("ui.render");
-    });
+    // Finding the repo takes a gh call; the session must not wait for it.
+    void github.repoName().then(
+      (repo) => {
+        const poller = createPoller(repo, {
+          listRuns: github.listRuns,
+          listPrs: github.listPrs,
+          now: () => $.clock.now(),
+          after: (ms, callback) => $.clock.after(ms, callback),
+          onChange: () => $.ui.invalidate("ui.render"),
+          toast: (text, timeoutMs) => $.ui.toast(text, timeoutMs ? { timeoutMs } : undefined),
+          log: (text) => $.ui.log(text),
+        });
+        watch = { repo, poller };
+        poller.start();
+        $.clock.every(TICK_MS, () => {
+          if (poller.live()) $.ui.invalidate("ui.render");
+        });
+      },
+      (error) => $.ui.log(`${error instanceof Error ? error.message : String(error)}; staying quiet`),
+    );
     return next(event);
   });
 
