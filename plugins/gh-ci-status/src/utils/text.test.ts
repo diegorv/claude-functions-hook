@@ -26,4 +26,5 @@ test("cut: control characters are dropped", () => {
     "a[31mbc",
     "the ESC and the CR go; what is left of the sequence is plain text",
   );
+  assert.equal(cut("a\u202eb\x85cd", 10), "abcd", "a bidi override and a C1 control go too");
 });

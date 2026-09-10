@@ -10,11 +10,12 @@ export function elapsed(ms: number): string {
   return `${totalMinutes}m${twoDigits(totalSeconds % 60)}s`;
 }
 
-// The first line, truncated with an ellipsis.
+// The first line, truncated with an ellipsis, without the control characters
+// the engine rejects or the bidi overrides that reorder what follows them.
 export function cut(text: string, maxLength: number): string {
   const firstLine = text
     .split("\n")[0]
-    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, "")
+    .replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g, "")
     .trim();
   const chars = Array.from(firstLine);
   return chars.length > maxLength ? `${chars.slice(0, maxLength - 1).join("")}…` : firstLine;
