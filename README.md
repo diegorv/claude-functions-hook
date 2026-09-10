@@ -20,7 +20,7 @@ current time.
 ## gh-ci-status
 
 ```
-⚙ owner/repo · Actions · 1 running · 2 finished
+⚙ owner/repo · Actions · 1 running · 1 finished
 #167  ◐ Running    PR       0m37s  chore(ci): smoke-test PR
 main  ● Success    Deploy   2m15s  Release 1.4.0
 ```
