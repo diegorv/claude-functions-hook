@@ -12,6 +12,9 @@ export function elapsed(ms: number): string {
 
 // The first line, truncated with an ellipsis.
 export function cut(text: string, maxLength: number): string {
-  const firstLine = text.split("\n")[0].trim();
+  const firstLine = text
+    .split("\n")[0]
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, "")
+    .trim();
   return firstLine.length > maxLength ? `${firstLine.slice(0, maxLength - 1)}…` : firstLine;
 }

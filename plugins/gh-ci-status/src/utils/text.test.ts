@@ -14,3 +14,11 @@ test("cut: first line, with an ellipsis", () => {
   assert.equal(cut("abc\ndef", 10), "abc");
   assert.equal(cut("abcdefghij", 5), "abcd…");
 });
+
+test("cut: control characters are dropped", () => {
+  assert.equal(
+    cut("a\x1b[31mb\rc", 10),
+    "a[31mbc",
+    "the ESC and the CR go; what is left of the sequence is plain text",
+  );
+});
