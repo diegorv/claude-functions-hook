@@ -17,7 +17,7 @@ export type BandInput = {
 // whitespace that aligns the column, kept outside the link.
 export type Cell = { text: string; href: string | null; pad: string };
 
-export type RowModel = {
+type RowModel = {
   ref: Cell; // #N linking to the PR, or the dim branch name
   phase: Phase;
   workflow: Cell; // links to the run

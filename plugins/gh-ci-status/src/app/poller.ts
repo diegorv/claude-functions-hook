@@ -4,7 +4,7 @@ import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } fro
 import { branchLabel, clock } from "../core/run-labels.ts";
 import { cut } from "../utils/text.ts";
 
-export type PollerConfig = {
+type PollerConfig = {
   activeMs: number; // interval while a run is in flight or a push is waiting
   idleMs: number; // interval while nothing is happening
   holdMs: number; // how long a finished run stays on the band
@@ -18,7 +18,7 @@ export const DEFAULT_CONFIG: PollerConfig = {
   watchMs: 6 * 60_000,
 };
 
-export type Timer = { cancel: () => void };
+type Timer = { cancel: () => void };
 
 export type PollerDeps = {
   listRuns: () => Promise<Run[]>;

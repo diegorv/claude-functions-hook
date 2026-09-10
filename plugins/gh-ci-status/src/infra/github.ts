@@ -4,19 +4,16 @@ import type { Pr, Run } from "../core/workflow-run.ts";
 import { cut } from "../utils/text.ts";
 
 export type ProcessResult = { exitCode: number; stdout: string; stderr: string };
-export type RunProcess = (
-  argv: readonly string[],
-  init?: { cwd?: string; timeoutMs?: number },
-) => Promise<ProcessResult>;
+type RunProcess = (argv: readonly string[], init?: { cwd?: string; timeoutMs?: number }) => Promise<ProcessResult>;
 
-export type GitHubLimits = { runs: number; prs: number };
-export const DEFAULT_LIMITS: GitHubLimits = { runs: 15, prs: 100 };
+type GitHubLimits = { runs: number; prs: number };
+const DEFAULT_LIMITS: GitHubLimits = { runs: 15, prs: 100 };
 
 const RUN_FIELDS =
   "databaseId,status,conclusion,workflowName,headBranch,displayTitle,createdAt,startedAt,updatedAt,url";
 const PR_FIELDS = "number,headRefName,isCrossRepository";
 
-export type GitHubClient = {
+type GitHubClient = {
   repoName: () => Promise<string>;
   listRuns: () => Promise<Run[]>;
   listPrs: () => Promise<Pr[]>;

@@ -78,7 +78,7 @@ export function visible(runs: Run[], now: number, holdMs: number): Run[] {
   return runs.filter((run) => inFlight(run) || now - Date.parse(run.updatedAt) < holdMs);
 }
 
-export type Transitions = {
+type Transitions = {
   seen: ReadonlySet<number>; // ids in flight after this poll
   started: Run[]; // entered flight now
   finished: Run[]; // were in flight and left it
