@@ -4,11 +4,12 @@ import { createPoller, DEFAULT_CONFIG, type PollerDeps } from "./poller.ts";
 import type { Run } from "../core/workflow-run.ts";
 import { at, run, running, T0 } from "../core/fixtures.ts";
 
-// Fake engine: `after` stores the callback, `tick` moves the clock to it and
-// fires it; each listRuns call consumes the next response in the list.
+// Fake engine: `after` adds a timer to the list, `tick` moves the clock to the
+// oldest live one and fires it; each listRuns call consumes the next response
+// in the list.
 function fakeEngine(responses: (() => Promise<Run[]>)[]) {
   let now = T0;
-  let pending: { at: number; callback: () => void } | null = null;
+  const timers: { at: number; callback: () => void; cancelled: boolean }[] = [];
   let responseIndex = 0;
   const toasts: string[] = [];
   const logs: string[] = [];
@@ -19,27 +20,34 @@ function fakeEngine(responses: (() => Promise<Run[]>)[]) {
     listPrs: () => Promise.reject(new Error("prs off")), // a failure here must not break the poll
     now: () => now,
     after: (ms, callback) => {
-      pending = { at: now + ms, callback };
-      return { cancel: () => (pending = null) };
+      const timer = { at: now + ms, callback, cancelled: false };
+      timers.push(timer);
+      return { cancel: () => (timer.cancelled = true) };
     },
     onChange: () => changeCount++,
     toast: (text) => toasts.push(text),
     log: (text) => logs.push(text),
   };
 
+  const live = () => timers.filter((timer) => !timer.cancelled); // armed and not fired yet
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   return {
     deps,
     toasts,
     logs,
     changeCount: () => changeCount,
-    nextDelay: () => (pending ? pending.at - now : null),
+    calls: () => responseIndex,
+    liveTimers: () => live().length,
+    nextDelay: () => {
+      const last = live().at(-1);
+      return last ? last.at - now : null;
+    },
     setNow: (epochMs: number) => (now = epochMs),
     settle,
     async tick() {
-      const due = pending;
-      pending = null;
+      const due = live().sort((a, b) => a.at - b.at)[0];
       if (due) {
+        timers.splice(timers.indexOf(due), 1);
         now = Math.max(now, due.at); // the clock never goes backwards
         due.callback();
       }
@@ -90,6 +98,27 @@ test("wake: cancels the timer, enters waiting, and a new run clears the waiting"
   await engine.tick();
   assert.equal(poller.waitingSince(), null, "the run showed up");
   assert.deepEqual(engine.toasts, ["⚙ a/b: CI started (main)"]);
+});
+
+test("wake during an in-flight poll keeps a single timer chain", async () => {
+  let answerSecondPoll: (runs: Run[]) => void = () => {};
+  const engine = fakeEngine([
+    () => Promise.resolve([]),
+    () => new Promise<Run[]>((resolve) => (answerSecondPoll = resolve)),
+    () => Promise.resolve([]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  await engine.tick(); // the second poll is in flight: gh has not answered yet
+  poller.wake();
+  await engine.settle();
+  answerSecondPoll([]);
+  await engine.settle();
+  assert.equal(engine.liveTimers(), 1, "one timer chain, not two");
+  const before = engine.calls();
+  await engine.tick();
+  assert.equal(engine.calls() - before, 1, "one poll per tick");
 });
 
 test("waiting expires after watchMs and the pace goes back to idle", async () => {

@@ -38,9 +38,6 @@ export type Poller = {
   live: () => boolean; // something on the band is counting up: a run in flight, or a push being waited on
 };
 
-type Pace = "active" | "idle";
-const paceFor = (active: boolean): Pace => (active ? "active" : "idle");
-
 export function createPoller(repo: string, deps: PollerDeps, config: PollerConfig = DEFAULT_CONFIG): Poller {
   let rows: Run[] = [];
   let pushedAt: number | null = null;
@@ -48,6 +45,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
   let firstPoll = true; // the first poll only learns what is already running, without notifying
   let errorLogged = false; // one line per outage, not one per poll
   let timer: Timer | null = null;
+  let polling = false; // one poll at a time: a wake mid-poll must not start a second chain of timers
 
   const waitingSince = (): number | null =>
     pushedAt !== null && deps.now() - pushedAt < config.watchMs ? pushedAt : null;
@@ -77,22 +75,24 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     firstPoll = false;
   };
 
-  const poll = async (): Promise<Pace> => {
+  const poll = async (): Promise<boolean> => {
     const runs = await fetchRuns();
-    if (runs === null) return paceFor(waiting());
+    if (runs === null) return waiting();
 
     const changes = transitions(seen, runs);
     seen = changes.seen;
     if (changes.started.length > 0) pushedAt = null; // the run the push was waiting for is here
     announce(changes.started, changes.finished);
     rows = visible(runs, deps.now(), config.holdMs);
-    return paceFor(live());
+    return live();
   };
 
   const loop = async () => {
-    const pace = await poll();
+    if (polling) return; // a wake during a poll: the running poll already sees pushedAt and keeps the active pace
+    polling = true;
+    const active = await poll().finally(() => (polling = false));
     deps.onChange();
-    timer = deps.after(pace === "active" ? config.activeMs : config.idleMs, () => void loop());
+    timer = deps.after(active ? config.activeMs : config.idleMs, () => void loop());
   };
 
   return {
