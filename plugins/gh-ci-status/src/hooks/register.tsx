@@ -19,6 +19,7 @@ export const register: Register = (on) => {
   let watch: { repo: string; poller: Poller } | null = null;
 
   on("session.start", ($, event, next) => {
+    if (!event.interactive) return next(event); // -p and the SDK draw nowhere
     const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
 
     // Finding the repo takes a gh call; the session must not wait for it.
