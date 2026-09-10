@@ -188,6 +188,25 @@ test("a finished row leaves rows() after holdMs even when gh is down", async () 
   assert.equal(poller.rows().length, 0, "the hold is over, even with no fresh list");
 });
 
+test("a throw after the fetch is logged and the loop goes on", async () => {
+  const engine = fakeEngine([() => Promise.resolve([]), () => Promise.resolve([running()])]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  engine.deps.toast = () => {
+    throw new Error("toast boom");
+  };
+  await engine.tick();
+  assert.deepEqual(engine.logs, ["toast boom"]);
+  assert.equal(engine.liveTimers(), 1, "the poller kept its timer chain");
+  engine.deps.onChange = () => {
+    throw new Error("invalidate boom");
+  };
+  await engine.tick();
+  assert.deepEqual(engine.logs, ["toast boom", "invalidate boom"]);
+  assert.equal(engine.liveTimers(), 1, "a redraw that throws does not stop it either");
+});
+
 test("a gh error is logged once per outage and polling continues", async () => {
   const engine = fakeEngine([
     () => Promise.reject(new Error("a")),

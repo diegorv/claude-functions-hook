@@ -99,8 +99,16 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
   const loop = async () => {
     if (polling) return; // a wake during a poll: the running poll already sees pushedAt and keeps the active pace
     polling = true;
-    const active = await poll().finally(() => (polling = false));
-    deps.onChange();
+    const active = await poll()
+      .then((pace) => {
+        deps.onChange();
+        return pace;
+      })
+      .catch((error: unknown) => {
+        deps.log(error instanceof Error ? error.message : String(error));
+        return waiting();
+      })
+      .finally(() => (polling = false));
     timer = deps.after(active ? config.activeMs : config.idleMs, () => void loop());
   };
 
