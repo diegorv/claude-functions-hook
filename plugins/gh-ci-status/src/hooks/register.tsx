@@ -46,7 +46,7 @@ export const register: Register = (on) => {
   });
 
   on("tool.call", { tool: "Bash" }, async ($, event, next) => {
-    if (!triggersWorkflow(typeof event.command === "string" ? event.command : "")) return next(event);
+    if (!triggersWorkflow(event.command)) return next(event);
     const result = await next(event); // the push has to finish before GitHub has anything to say
     if (!result.deny && !result.isError) watch?.poller.wake();
     return result;
