@@ -1,4 +1,4 @@
-// Core rules: what a GitHub Actions run is, which phase it is in, which runs stay
+// The workflow run model: what a GitHub Actions run is, which phase it is in, which runs stay
 // on the band, and what changed between one poll and the next. Imports nothing.
 
 export type Run = {

@@ -36,7 +36,8 @@ o Claude Code.
 plugins/gh-ci-status/
   .claude-plugin/plugin.json   manifesto
   hooks/hooks.json             aponta o módulo de entrada
-  src/core/                    regras puras, sem I/O
+  src/core/                    o modelo de run e o texto derivado dele, sem I/O
+  src/utils/                   helpers genéricos (texto)
   src/app/                     casos de uso (o poller)
   src/infra/                   clientes externos (GitHub via gh)
   src/components/              componentes da faixa

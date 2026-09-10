@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createPoller, DEFAULT_CONFIG, type PollerDeps } from "./poller.ts";
-import type { Run } from "../core/runs.ts";
-import { run, running, T0 } from "../core/fixtures.ts";
+import type { Run } from "../core/workflow-run.ts";
+import { at, run, running, T0 } from "../core/fixtures.ts";
 
 // Fake engine: `after` stores the callback, `tick` moves the clock to it and
 // fires it; each listRuns call consumes the next response in the list.
@@ -49,7 +49,7 @@ function fakeEngine(responses: (() => Promise<Run[]>)[]) {
 }
 
 test("the first poll learns without notifying; active pace with a run in flight", async () => {
-  const engine = fakeEngine([() => Promise.resolve([running(1)])]);
+  const engine = fakeEngine([() => Promise.resolve([running()])]);
   const poller = createPoller("a/b", engine.deps);
   poller.start();
   await engine.settle();
@@ -61,8 +61,8 @@ test("the first poll learns without notifying; active pace with a run in flight"
 
 test("a run that finishes becomes a toast and the pace drops to idle", async () => {
   const engine = fakeEngine([
-    () => Promise.resolve([running(1)]),
-    () => Promise.resolve([run({ databaseId: 1, updatedAt: new Date(T0 + 90_000).toISOString() })]),
+    () => Promise.resolve([running()]),
+    () => Promise.resolve([run({ updatedAt: at(90_000) })]),
   ]);
   const poller = createPoller("a/b", engine.deps);
   poller.start();
@@ -77,7 +77,7 @@ test("wake: cancels the timer, enters waiting, and a new run clears the waiting"
   const engine = fakeEngine([
     () => Promise.resolve([]),
     () => Promise.resolve([]),
-    () => Promise.resolve([running(7)]),
+    () => Promise.resolve([running({ databaseId: 7 })]),
   ]);
   const poller = createPoller("a/b", engine.deps);
   poller.start();

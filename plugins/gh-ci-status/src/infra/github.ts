@@ -1,7 +1,7 @@
 // GitHub client on top of the `gh` CLI. Takes the function that runs processes
 // instead of `$`, so the hook passes `$.process.run` and tests pass a fake.
-import type { Pr, Run } from "../core/runs.ts";
-import { cut } from "../core/format.ts";
+import type { Pr, Run } from "../core/workflow-run.ts";
+import { cut } from "../utils/text.ts";
 
 export type ProcessResult = { exitCode: number; stdout: string; stderr: string };
 export type RunProcess = (

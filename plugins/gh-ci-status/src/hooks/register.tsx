@@ -7,9 +7,9 @@
 import type { Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, type Poller } from "../app/poller.ts";
-import { inFlight } from "../core/runs.ts";
-import { isWakeCommand } from "../core/wake.ts";
+import { triggersWorkflow } from "../core/trigger-commands.ts";
 import { Band } from "../components/band.tsx";
+import { bandModel } from "../components/band-model.ts";
 
 const MAX_ROWS = 6;
 const TICK_MS = 1000; // the band's clocks move between polls
@@ -41,13 +41,13 @@ export const register: Register = (on) => {
     poller.start();
 
     $.clock.every(TICK_MS, () => {
-      if (poller.rows().some(inFlight) || poller.waitingSince() !== null) $.ui.invalidate("ui.render");
+      if (poller.live()) $.ui.invalidate("ui.render");
     });
     return next(event);
   });
 
   on("tool.call", { tool: "Bash" }, async ($, event, next) => {
-    if (!isWakeCommand(typeof event.command === "string" ? event.command : "")) return next(event);
+    if (!triggersWorkflow(typeof event.command === "string" ? event.command : "")) return next(event);
     const result = await next(event); // the push has to finish before GitHub has anything to say
     watch?.poller.wake();
     return result;
@@ -56,9 +56,13 @@ export const register: Register = (on) => {
   on("ui.render", { component: "AbovePrompt", surface: "terminal" }, async ($, event, next) => {
     if (event.props.hasSurvey || !watch) return next(event);
     const { repo, poller } = watch;
-    const rows = poller.rows();
-    const waitingSince = poller.waitingSince();
-    if (rows.length === 0 && waitingSince === null) return next(event);
-    return Band($.ui.resolve(event), { repo, rows, waitingSince, now: $.clock.now(), maxRows: MAX_ROWS });
+    const model = bandModel({
+      repo,
+      rows: poller.rows(),
+      waitingSince: poller.waitingSince(),
+      now: $.clock.now(),
+      maxRows: MAX_ROWS,
+    });
+    return model ? Band($.ui.resolve(event), model) : next(event);
   });
 };

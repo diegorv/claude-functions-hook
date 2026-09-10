@@ -1,7 +1,8 @@
 // The poll loop: when to ask, what to keep, when to notify. Everything that
 // touches the engine comes in through `deps`, so tests run it on a fake clock.
-import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "../core/runs.ts";
-import { branchLabel, elapsed } from "../core/format.ts";
+import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "../core/workflow-run.ts";
+import { branchLabel } from "../core/run-labels.ts";
+import { elapsed } from "../utils/text.ts";
 
 export type PollerConfig = {
   activeMs: number; // interval while a run is in flight or a push is waiting
@@ -34,9 +35,11 @@ export type Poller = {
   wake: () => void; // a push happened: look now and keep the active pace
   rows: () => Run[];
   waitingSince: () => number | null; // when the push happened, while no run has shown up
+  live: () => boolean; // something on the band is counting up: a run in flight, or a push being waited on
 };
 
 type Pace = "active" | "idle";
+const paceFor = (active: boolean): Pace => (active ? "active" : "idle");
 
 export function createPoller(repo: string, deps: PollerDeps, config: PollerConfig = DEFAULT_CONFIG): Poller {
   let rows: Run[] = [];
@@ -49,6 +52,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
   const waitingSince = (): number | null =>
     pushedAt !== null && deps.now() - pushedAt < config.watchMs ? pushedAt : null;
   const waiting = () => waitingSince() !== null;
+  const live = () => rows.some(inFlight) || waiting();
 
   const fetchRuns = async (): Promise<Run[] | null> => {
     try {
@@ -75,14 +79,14 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
 
   const poll = async (): Promise<Pace> => {
     const runs = await fetchRuns();
-    if (runs === null) return waiting() ? "active" : "idle";
+    if (runs === null) return paceFor(waiting());
 
     const changes = transitions(seen, runs);
     seen = changes.seen;
     if (changes.started.length > 0) pushedAt = null; // the run the push was waiting for is here
     announce(changes.started, changes.finished);
     rows = visible(runs, deps.now(), config.holdMs);
-    return rows.some(inFlight) || waiting() ? "active" : "idle";
+    return paceFor(live());
   };
 
   const loop = async () => {
@@ -102,5 +106,6 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     },
     rows: () => rows,
     waitingSince,
+    live,
   };
 }

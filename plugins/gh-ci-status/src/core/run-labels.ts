@@ -1,21 +1,6 @@
-// Text formatting for the band. Pure functions over Run only.
-import { inFlight, prNumber, type Run } from "./runs.ts";
-
-// Fixed width below one hour (`0m10s`, `3m09s`) so the columns line up.
-export function elapsed(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const totalMinutes = Math.floor(totalSeconds / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const twoDigits = (value: number) => String(value).padStart(2, "0");
-  if (hours > 0) return `${hours}h${twoDigits(totalMinutes % 60)}m`;
-  return `${totalMinutes}m${twoDigits(totalSeconds % 60)}s`;
-}
-
-// The first line, truncated with an ellipsis.
-export function cut(text: string, maxLength: number): string {
-  const firstLine = text.split("\n")[0].trim();
-  return firstLine.length > maxLength ? `${firstLine.slice(0, maxLength - 1)}…` : firstLine;
-}
+// Text derived from a workflow run: what each band column and toast says.
+import { inFlight, prNumber, type Run } from "./workflow-run.ts";
+import { elapsed } from "../utils/text.ts";
 
 // The time column: how long the run has been going, or how long it took.
 export function clock(run: Run, now: number): string {

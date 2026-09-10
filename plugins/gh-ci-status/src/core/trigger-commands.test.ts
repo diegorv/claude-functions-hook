@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isWakeCommand } from "./wake.ts";
+import { triggersWorkflow } from "./trigger-commands.ts";
 
-test("wakes on push, merge and workflow run", () => {
+test("push, merge and workflow run trigger a workflow", () => {
   const commands = [
     "git push",
     "git push -u origin main",
@@ -11,10 +11,10 @@ test("wakes on push, merge and workflow run", () => {
     "gh pr merge 12 --squash",
     "gh workflow run ci.yml",
   ];
-  for (const command of commands) assert.equal(isWakeCommand(command), true, command);
+  for (const command of commands) assert.equal(triggersWorkflow(command), true, command);
 });
 
-test("does not wake on other commands or on a dry run", () => {
+test("other commands and dry runs do not", () => {
   const commands = ["git pull", "git status", "npm run pushdb", "git push --dry-run", "gh pr view"];
-  for (const command of commands) assert.equal(isWakeCommand(command), false, command);
+  for (const command of commands) assert.equal(triggersWorkflow(command), false, command);
 });
