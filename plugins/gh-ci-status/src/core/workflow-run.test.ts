@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inFlight, LABEL_WIDTH, phase, prNumber, transitions, visible, withPrs } from "./workflow-run.ts";
+import { inFlight, phase, prNumber, transitions, visible, withPrs } from "./workflow-run.ts";
 import { at, run, running, T0 } from "./fixtures.ts";
 
 test("inFlight: anything not completed", () => {
@@ -45,14 +45,6 @@ test("phase: color per state", () => {
   assert.equal(phase(run({ conclusion: "failure" })).label, "Failed");
   assert.equal(phase(run({ conclusion: "cancelled" })).dot, "⊘");
   assert.equal(phase(run({ conclusion: "skipped" })).dim, true);
-});
-
-test("phase: every known label fits the column", () => {
-  const conclusions = ["success", "failure", "timed_out", "startup_failure", "cancelled"];
-  const cases = [running(), run({ status: "queued" }), ...conclusions.map((conclusion) => run({ conclusion }))];
-  for (const candidate of cases) {
-    assert.ok(phase(candidate).label.length <= LABEL_WIDTH, phase(candidate).label);
-  }
   assert.equal(phase(run({ conclusion: "startup_failure" })).label, "Failed");
   assert.equal(phase(run({ conclusion: "timed_out" })).label, "Timed out");
 });

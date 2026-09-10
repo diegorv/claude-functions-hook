@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { bandModel, type BandInput } from "./band-model.ts";
 import { at, run, running, T0 } from "../core/fixtures.ts";
+import { LABEL_WIDTH } from "../core/workflow-run.ts";
 
 const input = (overrides: Partial<BandInput> = {}): BandInput => ({
   repo: "a/b",
@@ -67,6 +68,11 @@ test("long refs and titles are cut; rows beyond maxRows are counted", () => {
   assert.equal(model.hiddenCount, 1);
   assert.equal(model.rows[0].ref.text.length, 24);
   assert.equal(model.rows[0].title?.text.length, 60);
+});
+
+test("an unknown conclusion still fits the status column", () => {
+  const [row] = bandModel(input({ rows: [run({ conclusion: "action_required" })] }))!.rows;
+  assert.equal(row.phase.label.length, LABEL_WIDTH);
 });
 
 test("finished rows keep their duration; updatedAt is the end", () => {

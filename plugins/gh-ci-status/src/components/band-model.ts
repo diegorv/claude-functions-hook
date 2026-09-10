@@ -60,9 +60,10 @@ export function bandModel(input: BandInput): BandModel | null {
   const rows = shown.map((run, index): RowModel => {
     const hasPr = prNumber(run) !== null;
     const title = cut(titleOf(run), TITLE_MAX);
+    const p = phase(run);
     return {
       ref: cell(refs[index], hasPr ? linkOf(input.repo, run) : null, refWidth),
-      phase: { ...phase(run), label: phase(run).label.padEnd(LABEL_WIDTH) },
+      phase: { ...p, label: cut(p.label, LABEL_WIDTH).padEnd(LABEL_WIDTH) },
       workflow: cell(workflows[index], run.url, workflowWidth),
       clock: clock(run, input.now),
       title: title ? cell(title, hasPr ? null : run.url) : null,
