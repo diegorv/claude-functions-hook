@@ -19,10 +19,23 @@ test("prNumber: from the pr field, or from refs/pull/N/head", () => {
 test("withPrs: matches by branch; a run with no PR is unchanged", () => {
   const runs = withPrs(
     [run({ headBranch: "feat/x" }), run({ databaseId: 2, headBranch: "main" })],
-    [{ number: 42, headRefName: "feat/x" }],
+    [{ number: 42, headRefName: "feat/x", isCrossRepository: false }],
   );
   assert.equal(prNumber(runs[0]), 42);
   assert.equal(prNumber(runs[1]), null);
+});
+
+test("withPrs: a fork PR never matches by branch", () => {
+  const prs = [{ number: 14218, headRefName: "trunk", isCrossRepository: true }];
+  assert.equal(prNumber(withPrs([run({ headBranch: "trunk" })], prs)[0]), null);
+});
+
+test("withPrs: a branch reused by two PRs gets the newest", () => {
+  const prs = [
+    { number: 14397, headRefName: "fix-workflow", isCrossRepository: false },
+    { number: 14347, headRefName: "fix-workflow", isCrossRepository: false },
+  ];
+  assert.equal(prNumber(withPrs([run({ headBranch: "fix-workflow" })], prs)[0]), 14397);
 });
 
 test("phase: color per state", () => {

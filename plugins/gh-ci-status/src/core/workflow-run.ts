@@ -14,7 +14,8 @@ export type Run = {
   pr?: number; // filled in by withPrs when the branch has a PR
 };
 
-export type Pr = { number: number; headRefName: string };
+// isCrossRepository: from a fork; its branch name says nothing about this repo's runs
+export type Pr = { number: number; headRefName: string; isCrossRepository: boolean };
 
 export type Phase = { dot: string; label: string; color?: string; dim?: boolean };
 
@@ -43,7 +44,13 @@ export function prNumber(run: Run): number | null {
 
 // Pairs each run with the PR of its branch. A run with no PR is returned as is.
 export function withPrs(runs: Run[], prs: Pr[]): Run[] {
-  const prByBranch = new Map(prs.map((pr) => [pr.headRefName, pr.number]));
+  // gh lists newest first and a Map keeps the last entry, so reverse to let the newest PR win.
+  const prByBranch = new Map(
+    prs
+      .filter((pr) => !pr.isCrossRepository)
+      .toReversed()
+      .map((pr) => [pr.headRefName, pr.number]),
+  );
   return runs.map((run) => (prByBranch.has(run.headBranch) ? { ...run, pr: prByBranch.get(run.headBranch) } : run));
 }
 
