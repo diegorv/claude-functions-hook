@@ -100,6 +100,33 @@ test("wake: cancels the timer, enters waiting, and a new run clears the waiting"
   assert.deepEqual(engine.toasts, ["⚙ a/b: CI started (main)"]);
 });
 
+test("a run created after the push clears the waiting, even if already finished", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([]),
+    () => Promise.resolve([run({ createdAt: at(5_000), updatedAt: at(12_000) })]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  poller.wake();
+  await engine.settle();
+  assert.equal(poller.waitingSince(), null, "the run the push was waiting for came and went");
+});
+
+test("a run that started before the push keeps the waiting", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([]),
+    () => Promise.resolve([running({ databaseId: 7, createdAt: at(0) })]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  engine.setNow(T0 + 10_000);
+  poller.wake();
+  await engine.settle();
+  assert.equal(poller.waitingSince(), T0 + 10_000, "that run is older than the push");
+});
+
 test("wake during an in-flight poll keeps a single timer chain", async () => {
   let answerSecondPoll: (runs: Run[]) => void = () => {};
   const engine = fakeEngine([

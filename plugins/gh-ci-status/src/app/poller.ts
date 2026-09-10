@@ -81,7 +81,8 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
 
     const changes = transitions(seen, runs);
     seen = changes.seen;
-    if (changes.started.length > 0) pushedAt = null; // the run the push was waiting for is here
+    const since = pushedAt; // narrowed copy: TS resets `let` narrowing inside the callback
+    if (since !== null && runs.some((run) => Date.parse(run.createdAt) >= since)) pushedAt = null; // the push's run is here
     announce(changes.started, changes.finished);
     rows = visible(runs, deps.now(), config.holdMs);
     return live();
