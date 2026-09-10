@@ -113,6 +113,19 @@ test("a run created after the push clears the waiting, even if already finished"
   assert.equal(poller.waitingSince(), null, "the run the push was waiting for came and went");
 });
 
+test("a run created just before the push still clears the waiting (clock skew)", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([]),
+    () => Promise.resolve([running({ databaseId: 7, createdAt: at(-5_000) })]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  poller.wake();
+  await engine.settle();
+  assert.equal(poller.waitingSince(), null, "GitHub's clock runs a little behind the local one");
+});
+
 test("a run that started before the push keeps the waiting", async () => {
   const engine = fakeEngine([
     () => Promise.resolve([]),
@@ -121,10 +134,10 @@ test("a run that started before the push keeps the waiting", async () => {
   const poller = createPoller("a/b", engine.deps);
   poller.start();
   await engine.settle();
-  engine.setNow(T0 + 10_000);
+  engine.setNow(T0 + 60_000);
   poller.wake();
   await engine.settle();
-  assert.equal(poller.waitingSince(), T0 + 10_000, "that run is older than the push");
+  assert.equal(poller.waitingSince(), T0 + 60_000, "that run is older than the push");
 });
 
 test("wake during an in-flight poll keeps a single timer chain", async () => {

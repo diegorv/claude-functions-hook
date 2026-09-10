@@ -27,6 +27,8 @@ export const DEFAULT_CONFIG: PollerConfig = {
   watchMs: 6 * 60_000,
 };
 
+const CLOCK_SKEW_MS = 10_000; // the local clock against GitHub's
+
 type Timer = { cancel: () => void };
 
 export type PollerDeps = {
@@ -91,7 +93,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     const changes = transitions(seen, runs);
     seen = changes.seen;
     const since = pushedAt; // narrowed copy: TS resets `let` narrowing inside the callback
-    if (since !== null && runs.some((run) => Date.parse(run.createdAt) >= since)) pushedAt = null; // the push's run is here
+    if (since !== null && runs.some((run) => Date.parse(run.createdAt) >= since - CLOCK_SKEW_MS)) pushedAt = null; // the push's run is here
     announce(changes.started, changes.finished);
     rows = visible(runs, deps.now(), config.holdMs);
     return live();
