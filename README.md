@@ -10,6 +10,13 @@ between releases.
 | [time](plugins/time) | The time you sent each message, drawn above it |
 | [gh-ci-status](plugins/gh-ci-status) | GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run |
 
+## time
+
+The time above a message is the one of its first drawing, which is when you
+sent it, and it is kept per message, so a resize or a redraw does not move it.
+A resumed session, or a reload of the plugin, draws the old messages with the
+current time.
+
 ## gh-ci-status
 
 ```
