@@ -10,6 +10,9 @@ test("push, merge and workflow run trigger a workflow", () => {
     "cd app && git push",
     "gh pr merge 12 --squash",
     "gh workflow run ci.yml",
+    "git subtree push --prefix=dist origin gh-pages",
+    "gh run rerun 123",
+    "git commit -m 'fix --dry-run' && git push",
   ];
   for (const command of commands) assert.equal(triggersWorkflow(command), true, command);
 });
