@@ -14,6 +14,6 @@ jobs:
         with:
           node-version: 24 # runs .ts directly, no build step
       - run: npm test
-      - run: npx -y prettier@3 --check 'plugins/**/*.{ts,tsx,json}'
+      - run: npx -y prettier@3 --check '{plugins,.claude-plugin}/**/*.{ts,tsx,json}'
       # typecheck is local only: it needs .claude/types, which /plugin-types
       # writes from inside a Claude Code session.

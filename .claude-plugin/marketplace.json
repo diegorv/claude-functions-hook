@@ -4,6 +4,10 @@
   "description": "Diego's function hooks for Claude Code",
   "plugins": [
     { "name": "time", "source": "./plugins/time", "description": "The time you sent each message, drawn above it" },
-    { "name": "gh-ci-status", "source": "./plugins/gh-ci-status", "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run" }
+    {
+      "name": "gh-ci-status",
+      "source": "./plugins/gh-ci-status",
+      "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run"
+    }
   ]
 }
