@@ -1,5 +1,6 @@
 {
   "name": "gh-ci-status",
   "version": "0.1.0",
+  "author": { "name": "Diego R. v." },
   "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run"
 }

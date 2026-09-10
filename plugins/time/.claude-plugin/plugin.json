@@ -1,5 +1,6 @@
 {
   "name": "time",
   "version": "0.1.0",
+  "author": { "name": "Diego R. v." },
   "description": "The time you sent each message, drawn above it"
 }
