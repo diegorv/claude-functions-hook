@@ -8,14 +8,13 @@
 // a resumed session, or a reload of the plugin, draws old messages with the
 // current time.
 import type { Register } from "claude-code";
-import { formatTime } from "../utils/clock.ts";
+import { timeFor } from "../utils/clock.ts";
 import { Timestamp } from "../components/timestamp.tsx";
 
 export const register: Register = (on) => {
   const drawnAt = new Map<string, string>(); // message id -> the time of its first drawing
   on("ui.render", { component: "UserMessage" }, async ($, event, next) => {
-    const time = drawnAt.get(event.requestId) ?? formatTime($.clock.now());
-    drawnAt.set(event.requestId, time);
+    const time = timeFor(drawnAt, event.requestId, $.clock.now());
     return Timestamp($.ui.resolve(event), time, await next(event));
   });
 };
