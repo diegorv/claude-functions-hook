@@ -1,5 +1,5 @@
-// Linhas de shell que provavelmente disparam um workflow. `git push` carrega
-// flags próprias, então a alternância caminha por elas. Dry run não conta.
+// Shell lines that probably trigger a workflow. `git push` carries its own
+// flags, so the alternation walks past them. A dry run does not count.
 const WAKES = /(^|[^\w./-])(git(\s+-\S+(\s+\S+)?)*\s+push(\s|$)|gh\s+pr\s+merge(\s|$)|gh\s+workflow\s+run(\s|$))/;
 const DRY_RUN = /--dry-run/;
 

@@ -36,10 +36,10 @@ o Claude Code.
 plugins/gh-ci-status/
   .claude-plugin/plugin.json   manifesto
   hooks/hooks.json             aponta o módulo de entrada
-  src/domain/                  regras puras, sem I/O
+  src/core/                    regras puras, sem I/O
   src/app/                     casos de uso (o poller)
-  src/infra/                   clientes externos (gh)
-  src/ui/                      componentes da faixa
+  src/infra/                   clientes externos (GitHub via gh)
+  src/components/              componentes da faixa
   src/hooks/                   a ligação com o engine
-  test/                        espelha src/, roda no Node
+  *.test.ts                    ao lado do arquivo testado, rodam no Node
 ```

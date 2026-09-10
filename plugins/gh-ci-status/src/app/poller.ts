@@ -1,13 +1,13 @@
-// O loop de poll: quando consultar, o que guardar, quando avisar. Tudo que
-// toca o engine entra por `deps`, então roda em teste com um relógio falso.
-import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "../domain/runs.ts";
-import { branchLabel, elapsed } from "../domain/format.ts";
+// The poll loop: when to ask, what to keep, when to notify. Everything that
+// touches the engine comes in through `deps`, so tests run it on a fake clock.
+import { inFlight, phase, transitions, visible, withPrs, type Pr, type Run } from "../core/runs.ts";
+import { branchLabel, elapsed } from "../core/format.ts";
 
 export type PollerConfig = {
-  activeMs: number; // intervalo com run em andamento ou push esperando
-  idleMs: number; // intervalo parado
-  holdMs: number; // quanto tempo um run terminado fica na faixa
-  watchMs: number; // quanto tempo um push mantém o ritmo rápido
+  activeMs: number; // interval while a run is in flight or a push is waiting
+  idleMs: number; // interval while nothing is happening
+  holdMs: number; // how long a finished run stays on the band
+  watchMs: number; // how long a push keeps the active pace
 };
 
 export const DEFAULT_CONFIG: PollerConfig = {
@@ -21,33 +21,33 @@ export type Timer = { cancel: () => void };
 
 export type PollerDeps = {
   listRuns: () => Promise<Run[]>;
-  listPrs: () => Promise<Pr[]>; // pode falhar: os runs ficam sem #N
+  listPrs: () => Promise<Pr[]>; // may fail: runs then show no #N
   now: () => number;
-  after: (ms: number, fn: () => void) => Timer;
-  onChange: () => void; // a faixa precisa redesenhar
+  after: (ms: number, callback: () => void) => Timer;
+  onChange: () => void; // the band needs a redraw
   toast: (text: string, timeoutMs?: number) => void;
   log: (text: string) => void;
 };
 
 export type Poller = {
   start: () => void;
-  wake: () => void; // um push aconteceu: olha agora e fica no ritmo rápido
+  wake: () => void; // a push happened: look now and keep the active pace
   rows: () => Run[];
-  waitingSince: () => number | null; // quando o push aconteceu, enquanto nenhum run apareceu
+  waitingSince: () => number | null; // when the push happened, while no run has shown up
 };
 
 type Pace = "active" | "idle";
 
-export function createPoller(repo: string, deps: PollerDeps, cfg: PollerConfig = DEFAULT_CONFIG): Poller {
+export function createPoller(repo: string, deps: PollerDeps, config: PollerConfig = DEFAULT_CONFIG): Poller {
   let rows: Run[] = [];
   let pushedAt: number | null = null;
   let seen: ReadonlySet<number> = new Set();
-  let first = true; // o primeiro poll só aprende o que já roda, sem avisar
-  let errorLogged = false; // uma linha por pane, não uma por poll
+  let firstPoll = true; // the first poll only learns what is already running, without notifying
+  let errorLogged = false; // one line per outage, not one per poll
   let timer: Timer | null = null;
 
   const waitingSince = (): number | null =>
-    pushedAt !== null && deps.now() - pushedAt < cfg.watchMs ? pushedAt : null;
+    pushedAt !== null && deps.now() - pushedAt < config.watchMs ? pushedAt : null;
   const waiting = () => waitingSince() !== null;
 
   const fetchRuns = async (): Promise<Run[] | null> => {
@@ -55,40 +55,40 @@ export function createPoller(repo: string, deps: PollerDeps, cfg: PollerConfig =
       const [runs, prs] = await Promise.all([deps.listRuns(), deps.listPrs().catch(() => [] as Pr[])]);
       errorLogged = false;
       return withPrs(runs, prs);
-    } catch (err) {
-      if (!errorLogged) deps.log(err instanceof Error ? err.message : String(err));
+    } catch (error) {
+      if (!errorLogged) deps.log(error instanceof Error ? error.message : String(error));
       errorLogged = true;
       return null;
     }
   };
 
   const announce = (started: Run[], finished: Run[]) => {
-    if (!first) {
-      for (const r of started) deps.toast(`⚙ ${repo}: ${r.workflowName} started (${branchLabel(r)})`);
+    if (!firstPoll) {
+      for (const run of started) deps.toast(`⚙ ${repo}: ${run.workflowName} started (${branchLabel(run)})`);
     }
-    for (const r of finished) {
-      const took = elapsed(Date.parse(r.updatedAt) - Date.parse(r.createdAt));
-      deps.toast(`⚙ ${repo}: ${r.workflowName} ${phase(r).label} after ${took}`, 8000);
+    for (const run of finished) {
+      const took = elapsed(Date.parse(run.updatedAt) - Date.parse(run.createdAt));
+      deps.toast(`⚙ ${repo}: ${run.workflowName} ${phase(run).label} after ${took}`, 8000);
     }
-    first = false;
+    firstPoll = false;
   };
 
   const poll = async (): Promise<Pace> => {
-    const list = await fetchRuns();
-    if (list === null) return waiting() ? "active" : "idle";
+    const runs = await fetchRuns();
+    if (runs === null) return waiting() ? "active" : "idle";
 
-    const t = transitions(seen, list);
-    seen = t.seen;
-    if (t.started.length > 0) pushedAt = null; // chegou o run que o push esperava
-    announce(t.started, t.finished);
-    rows = visible(list, deps.now(), cfg.holdMs);
+    const changes = transitions(seen, runs);
+    seen = changes.seen;
+    if (changes.started.length > 0) pushedAt = null; // the run the push was waiting for is here
+    announce(changes.started, changes.finished);
+    rows = visible(runs, deps.now(), config.holdMs);
     return rows.some(inFlight) || waiting() ? "active" : "idle";
   };
 
   const loop = async () => {
     const pace = await poll();
     deps.onChange();
-    timer = deps.after(pace === "active" ? cfg.activeMs : cfg.idleMs, () => void loop());
+    timer = deps.after(pace === "active" ? config.activeMs : config.idleMs, () => void loop());
   };
 
   return {

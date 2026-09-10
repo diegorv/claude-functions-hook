@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test 'plugins/*/test/**/*.test.ts'",
+    "test": "node --test 'plugins/*/src/**/*.test.ts'",
     "typecheck": "for p in plugins/*/tsconfig.json; do npx -y -p typescript tsc -p $p || exit 1; done",
     "format": "npx -y prettier --write 'plugins/**/*.{ts,tsx,json}'",
     "validate": "for p in plugins/*/; do claude plugin validate $p || exit 1; done"

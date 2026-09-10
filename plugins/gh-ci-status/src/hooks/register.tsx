@@ -1,38 +1,38 @@
 /** @jsx h */
-// Liga as peças ao engine: três hooks, nenhuma lógica própria.
+// Wires the pieces to the engine: three hooks, no logic of its own.
 //
-//   session.start  descobre o repo pelo remote e inicia o poller
-//   tool.call      um push ou merge no Bash acorda o poller
-//   ui.render      desenha a faixa acima do prompt com o estado do poller
+//   session.start  finds the repo through its remote and starts the poller
+//   tool.call      a push or merge in Bash wakes the poller
+//   ui.render      draws the band above the prompt from the poller's state
 import type { Register } from "claude-code";
-import { createGhClient } from "../infra/gh.ts";
+import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, type Poller } from "../app/poller.ts";
-import { inFlight } from "../domain/runs.ts";
-import { isWakeCommand } from "../domain/wake.ts";
-import { Band } from "../ui/band.tsx";
+import { inFlight } from "../core/runs.ts";
+import { isWakeCommand } from "../core/wake.ts";
+import { Band } from "../components/band.tsx";
 
 const MAX_ROWS = 6;
-const TICK_MS = 1000; // os relógios da faixa andam entre um poll e outro
+const TICK_MS = 1000; // the band's clocks move between polls
 
 export const register: Register = (on) => {
-  // Preenchido por session.start; null até lá, ou quando não há repo no GitHub.
+  // Set by session.start; null until then, or when there is no GitHub repo.
   let watch: { repo: string; poller: Poller } | null = null;
 
-  on("session.start", async ($, e, next) => {
-    const gh = createGhClient((argv, init) => $.process.run(argv, init), e.cwd);
+  on("session.start", async ($, event, next) => {
+    const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
     let repo: string;
     try {
-      repo = await gh.repoName();
-    } catch (err) {
-      $.ui.log(`${err instanceof Error ? err.message : String(err)}; staying quiet`);
-      return next(e);
+      repo = await github.repoName();
+    } catch (error) {
+      $.ui.log(`${error instanceof Error ? error.message : String(error)}; staying quiet`);
+      return next(event);
     }
 
     const poller = createPoller(repo, {
-      listRuns: gh.listRuns,
-      listPrs: gh.listPrs,
+      listRuns: github.listRuns,
+      listPrs: github.listPrs,
       now: () => $.clock.now(),
-      after: (ms, fn) => $.clock.after(ms, fn),
+      after: (ms, callback) => $.clock.after(ms, callback),
       onChange: () => $.ui.invalidate("ui.render"),
       toast: (text, timeoutMs) => $.ui.toast(text, timeoutMs ? { timeoutMs } : undefined),
       log: (text) => $.ui.log(text),
@@ -43,22 +43,22 @@ export const register: Register = (on) => {
     $.clock.every(TICK_MS, () => {
       if (poller.rows().some(inFlight) || poller.waitingSince() !== null) $.ui.invalidate("ui.render");
     });
-    return next(e);
+    return next(event);
   });
 
-  on("tool.call", { tool: "Bash" }, async ($, e, next) => {
-    if (!isWakeCommand(typeof e.command === "string" ? e.command : "")) return next(e);
-    const result = await next(e); // o push precisa terminar antes de o GitHub ter algo a dizer
+  on("tool.call", { tool: "Bash" }, async ($, event, next) => {
+    if (!isWakeCommand(typeof event.command === "string" ? event.command : "")) return next(event);
+    const result = await next(event); // the push has to finish before GitHub has anything to say
     watch?.poller.wake();
     return result;
   });
 
-  on("ui.render", { component: "AbovePrompt", surface: "terminal" }, async ($, e, next) => {
-    if (e.props.hasSurvey || !watch) return next(e);
+  on("ui.render", { component: "AbovePrompt", surface: "terminal" }, async ($, event, next) => {
+    if (event.props.hasSurvey || !watch) return next(event);
     const { repo, poller } = watch;
     const rows = poller.rows();
     const waitingSince = poller.waitingSince();
-    if (rows.length === 0 && waitingSince === null) return next(e);
-    return Band($.ui.resolve(e), { repo, rows, waitingSince, now: $.clock.now(), maxRows: MAX_ROWS });
+    if (rows.length === 0 && waitingSince === null) return next(event);
+    return Band($.ui.resolve(event), { repo, rows, waitingSince, now: $.clock.now(), maxRows: MAX_ROWS });
   });
 };
