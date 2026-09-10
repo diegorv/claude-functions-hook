@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # runs .ts directly, no build step
+      - run: npm test
+      - run: npx -y prettier --check 'plugins/**/*.{ts,tsx,json}'
+      # typecheck is local only: it needs .claude/types, which /plugin-types
+      # writes from inside a Claude Code session.
