@@ -28,7 +28,7 @@ export function createGitHubClient(
   limits: GitHubLimits = DEFAULT_LIMITS,
 ): GitHubClient {
   const failure = (result: ProcessResult, fallback: string) =>
-    new Error(cut(result.stderr || result.stdout || fallback, 120));
+    new Error(cut(result.stderr, 120) || cut(result.stdout, 120) || fallback);
 
   const runGh = async (args: string[], timeoutMs: number): Promise<ProcessResult> => {
     const result = await runProcess(["gh", ...args], { cwd, timeoutMs });

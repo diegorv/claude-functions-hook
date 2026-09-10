@@ -46,4 +46,5 @@ test("listRuns and listPrs: JSON parsing and limits", async () => {
 
 test("listRuns: a non-zero exit becomes an Error", async () => {
   await assert.rejects(createGitHubClient(() => failed(4), "/repo").listRuns(), /gh exited 4/);
+  await assert.rejects(createGitHubClient(() => failed(1, "\n"), "/repo").listRuns(), /gh exited 1/);
 });
