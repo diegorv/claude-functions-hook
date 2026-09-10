@@ -1,10 +1,9 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-function-hooks",
   "owner": { "name": "Diego R. v." },
-  "metadata": { "description": "Diego's function hooks for Claude Code", "version": "0.1.0" },
+  "description": "Diego's function hooks for Claude Code",
   "plugins": [
-    { "name": "time", "source": "./plugins/time", "description": "The time you sent each message, drawn above it", "version": "0.1.0" },
-    { "name": "gh-ci-status", "source": "./plugins/gh-ci-status", "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run", "version": "0.1.0" }
+    { "name": "time", "source": "./plugins/time", "description": "The time you sent each message, drawn above it" },
+    { "name": "gh-ci-status", "source": "./plugins/gh-ci-status", "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run" }
   ]
 }
