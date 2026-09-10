@@ -13,11 +13,19 @@ test("push, merge and workflow run trigger a workflow", () => {
     "git subtree push --prefix=dist origin gh-pages",
     "gh run rerun 123",
     "git commit -m 'fix --dry-run' && git push",
+    "git push --dry-run && git push",
   ];
   for (const command of commands) assert.equal(triggersWorkflow(command), true, command);
 });
 
 test("other commands and dry runs do not", () => {
-  const commands = ["git pull", "git status", "npm run pushdb", "git push --dry-run", "gh pr view"];
+  const commands = [
+    "git pull",
+    "git status",
+    "npm run pushdb",
+    "git push --dry-run",
+    "git push -n origin main",
+    "gh pr view",
+  ];
   for (const command of commands) assert.equal(triggersWorkflow(command), false, command);
 });
