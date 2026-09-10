@@ -70,6 +70,10 @@ test("long refs and titles are cut; rows beyond maxRows are counted", () => {
   assert.equal(model.rows[0].title?.text.length, 60);
 });
 
+test("a run without a workflow name still gets a label", () => {
+  assert.equal(bandModel(input({ rows: [run({ workflowName: "" })] }))!.rows[0].workflow.text, "workflow");
+});
+
 test("an unknown conclusion still fits the status column", () => {
   const [row] = bandModel(input({ rows: [run({ conclusion: "action_required" })] }))!.rows;
   assert.equal(row.phase.label.length, LABEL_WIDTH);

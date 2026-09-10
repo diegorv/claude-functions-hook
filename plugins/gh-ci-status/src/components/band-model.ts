@@ -2,7 +2,7 @@
 // maps this to elements and decides nothing, so this is where the drawing is
 // tested.
 import { inFlight, phase, prNumber, LABEL_WIDTH, type Phase, type Run } from "../core/workflow-run.ts";
-import { branchLabel, clock, counts, linkOf, titleOf } from "../core/run-labels.ts";
+import { branchLabel, clock, counts, linkOf, titleOf, workflowLabel } from "../core/run-labels.ts";
 import { cut, elapsed } from "../utils/text.ts";
 
 export type BandInput = {
@@ -53,7 +53,7 @@ export function bandModel(input: BandInput): BandModel | null {
 
   const shown = input.rows.slice(0, input.maxRows);
   const refs = shown.map((run) => cut(branchLabel(run), REF_MAX));
-  const workflows = shown.map((run) => cut(run.workflowName, WORKFLOW_MAX));
+  const workflows = shown.map((run) => cut(workflowLabel(run), WORKFLOW_MAX));
   const refWidth = Math.max(0, ...refs.map((ref) => ref.length));
   const workflowWidth = Math.max(0, ...workflows.map((workflow) => workflow.length));
 

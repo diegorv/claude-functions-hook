@@ -9,6 +9,8 @@ export function clock(run: Run, now: number): string {
   return elapsed(endedAt - startedAt);
 }
 
+export const workflowLabel = (run: Run): string => run.workflowName || "workflow"; // runs of organization rulesets come without a name
+
 // `#167` when the run has a PR; otherwise the branch name.
 export function branchLabel(run: Run): string {
   const number = prNumber(run);
