@@ -35,6 +35,17 @@ test("prNumber: from the pr field, or from refs/pull/N/head", () => {
   assert.equal(prNumber(run()), null);
 });
 
+// A real merge_group headBranch, from `gh run list -R Homebrew/brew --event merge_group`.
+test("prNumber: from a merge queue branch, gh-readonly-queue/<base>/pr-N-<sha>", () => {
+  assert.equal(
+    prNumber(run({ headBranch: "gh-readonly-queue/main/pr-24172-5327ac6226b259291d4b66139b3f357f69d38e95" })),
+    24172,
+  );
+  assert.equal(prNumber(run({ headBranch: "gh-readonly-queue/release/2.x/pr-7-abc123" })), 7);
+  assert.equal(prNumber(run({ headBranch: "gh-readonly-queue/main" })), null);
+  assert.equal(prNumber(run({ headBranch: "feat/pr-12-abc" })), null);
+});
+
 test("withPrs: matches by branch; a run with no PR is unchanged", () => {
   const runs = withPrs(
     [run({ headBranch: "feat/x" }), run({ databaseId: 2, headBranch: "main" })],

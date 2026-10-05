@@ -62,11 +62,13 @@ const PERSON_EVENTS = new Set([
 ]);
 export const startedByPerson = (run: Run): boolean => PERSON_EVENTS.has(run.event);
 
-// The PR number: what withPrs matched by branch, or the N in `refs/pull/N/head`,
-// the branch GitHub uses for runs a PR triggered. Null when there is no way to know.
+// The PR number: what withPrs matched by branch, the N in `refs/pull/N/head`, the branch
+// GitHub uses for runs a PR triggered, or the N in `gh-readonly-queue/<base>/pr-N-<sha>`,
+// the branch of a merge queue run. Null when there is no way to know.
 export function prNumber(run: Run): number | null {
   if (run.pr !== undefined) return run.pr;
-  const match = /^refs\/pull\/(\d+)\//.exec(run.headBranch);
+  const match =
+    /^refs\/pull\/(\d+)\//.exec(run.headBranch) ?? /^gh-readonly-queue\/.+\/pr-(\d+)-[0-9a-f]+$/.exec(run.headBranch);
   return match ? Number(match[1]) : null;
 }
 
