@@ -37,7 +37,7 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
                 </Text>,
               )}
               {column(
-                <Text color={row.phase.color} dimColor={row.phase.dim}>
+                <Text color={row.phase.color}>
                   {row.phase.href ? (
                     <Link href={row.phase.href}>{`${row.phase.dot} ${row.phase.label}`}</Link>
                   ) : (

@@ -55,13 +55,18 @@ test("withPrs: a branch reused by two PRs gets the newest", () => {
   assert.equal(prNumber(withPrs([run({ headBranch: "fix-workflow" })], prs)[0]), 14397);
 });
 
-test("phase: color per state", () => {
-  assert.deepEqual(phase(running()), { dot: "◐", label: "Running", color: "yellow" });
+test("phase: color per state, by theme key; failures raw red", () => {
+  assert.deepEqual(phase(running()), { dot: "◐", label: "Running", color: "warning" });
   assert.equal(phase(run({ status: "queued" })).label, "Queued");
-  assert.equal(phase(run()).color, "green");
+  assert.equal(phase(run({ status: "queued" })).color, "warning");
+  assert.equal(phase(run()).color, "success");
   assert.equal(phase(run({ conclusion: "failure" })).label, "Failed");
+  assert.equal(phase(run({ conclusion: "failure" })).color, "red");
+  assert.equal(phase(run({ conclusion: "timed_out" })).color, "red");
   assert.equal(phase(run({ conclusion: "cancelled" })).dot, "⊘");
-  assert.equal(phase(run({ conclusion: "skipped" })).dim, true);
+  assert.equal(phase(run({ conclusion: "cancelled" })).color, "inactive");
+  assert.equal(phase(run({ conclusion: "skipped" })).color, "inactive");
+  assert.equal(phase(run({ conclusion: "some_new_state" })).color, "inactive");
   assert.equal(phase(run({ conclusion: "startup_failure" })).label, "Failed");
   assert.equal(phase(run({ conclusion: "timed_out" })).label, "Timed out");
 });
@@ -77,16 +82,16 @@ test("phase: every conclusion gets a capitalized label that fits the column", ()
   assert.equal(phase(run({ conclusion: null })).label, "Done");
 });
 
-test("phase: action_required asks for attention; skipped stays dim", () => {
-  assert.deepEqual(phase(run({ conclusion: "action_required" })), { dot: "!", label: "Needs you", color: "yellow" });
-  assert.equal(phase(run({ conclusion: "skipped" })).dim, true);
+test("phase: action_required asks for attention; skipped stays inactive", () => {
+  assert.deepEqual(phase(run({ conclusion: "action_required" })), { dot: "!", label: "Needs you", color: "warning" });
+  assert.equal(phase(run({ conclusion: "skipped" })).color, "inactive");
 });
 
 test("phase: a run waiting on a deployment says so", () => {
   assert.deepEqual(phase(run({ status: "waiting", conclusion: null })), {
     dot: "○",
     label: "Waiting",
-    color: "yellow",
+    color: "warning",
   });
 });
 

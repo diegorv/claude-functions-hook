@@ -19,7 +19,9 @@ export type Run = {
 // isCrossRepository: from a fork; its branch name says nothing about this repo's runs
 export type Pr = { number: number; headRefName: string; isCrossRepository: boolean };
 
-export type Phase = { dot: string; label: string; color?: string; dim?: boolean };
+// `color` is a theme key, so it follows the person's theme (light, dark,
+// colorblind), except failures: raw red until a theme key for them is known.
+export type Phase = { dot: string; label: string; color: string };
 
 const LABELS = {
   running: "Running",
@@ -75,28 +77,28 @@ export function withPrs(runs: Run[], prs: Pr[]): Run[] {
 }
 
 export function phase(run: Run): Phase {
-  if (run.status === "in_progress") return { dot: "◐", label: LABELS.running, color: "yellow" };
-  if (run.status === "waiting") return { dot: "○", label: LABELS.waiting, color: "yellow" };
-  if (inFlight(run)) return { dot: "○", label: LABELS.queued, color: "yellow" };
+  if (run.status === "in_progress") return { dot: "◐", label: LABELS.running, color: "warning" };
+  if (run.status === "waiting") return { dot: "○", label: LABELS.waiting, color: "warning" };
+  if (inFlight(run)) return { dot: "○", label: LABELS.queued, color: "warning" };
   switch (run.conclusion) {
     case "success":
-      return { dot: "●", label: LABELS.success, color: "green" };
+      return { dot: "●", label: LABELS.success, color: "success" };
     case "failure":
     case "startup_failure":
       return { dot: "✗", label: LABELS[run.conclusion], color: "red" };
     case "timed_out":
       return { dot: "✗", label: LABELS.timed_out, color: "red" };
     case "action_required":
-      return { dot: "!", label: LABELS.action_required, color: "yellow" };
+      return { dot: "!", label: LABELS.action_required, color: "warning" };
     case "cancelled":
-      return { dot: "⊘", label: LABELS.cancelled, color: "red" };
+      return { dot: "⊘", label: LABELS.cancelled, color: "inactive" };
     case "skipped":
     case "neutral":
     case "stale":
-      return { dot: "·", label: LABELS[run.conclusion], dim: true };
+      return { dot: "·", label: LABELS[run.conclusion], color: "inactive" };
     default: {
       const label = (run.conclusion ?? "done").replaceAll("_", " ");
-      return { dot: "·", label: label.charAt(0).toUpperCase() + label.slice(1), dim: true };
+      return { dot: "·", label: label.charAt(0).toUpperCase() + label.slice(1), color: "inactive" };
     }
   }
 }
