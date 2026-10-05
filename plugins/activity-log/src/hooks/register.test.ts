@@ -142,11 +142,11 @@ test("a synchronous throw from next is rethrown as is and written as an error li
   assert.equal(failed.error.message, "sync");
 });
 
-test("ui.render, ui.resolve, this plugin's own calls and the streams' `*` runs are passed on unwritten", async () => {
+test("ui.render, ui.resolve, prompt.edit, this plugin's own calls and the streams' `*` runs are passed on unwritten", async () => {
   const engine = setup();
   const pass = (value: unknown) => Promise.resolve(value);
   await engine.dispatch("session.cwd", {}, pass); // a first line, so a file exists
-  for (const event of ["ui.render", "ui.resolve", "turn.step", "process.spawn"]) {
+  for (const event of ["ui.render", "ui.resolve", "prompt.edit", "turn.step", "process.spawn"]) {
     assert.deepEqual(await engine.dispatch(event, { event }, pass), { event });
   }
   await engine.dispatch("process.run", { argv: ["sh"] }, pass, { plugin: "activity-log", tier: "user" });

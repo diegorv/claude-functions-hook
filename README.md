@@ -73,7 +73,8 @@ lines go to a new file, under the new session id.
   made 700 and each file 600, but nothing is redacted: delete what you do not
   want kept.
 - Left out: `ui.render` and `ui.resolve`, which fire for each component on
-  every redraw, and this plugin's own calls. Telemetry is only the
+  every redraw; `prompt.edit`, which fires on every keystroke with the draft
+  so far (`prompt.submit` keeps the text sent); and this plugin's own calls. Telemetry is only the
   `collector` stream of `telemetry.log`; the `anthropic` stream, and
   `telemetry.mark` with it, is closed to installed plugins.
 - It is large: about 2 MB for a one-line prompt, mostly `tool.describe`,

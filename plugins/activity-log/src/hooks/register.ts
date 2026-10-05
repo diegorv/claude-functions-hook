@@ -5,6 +5,8 @@
 //
 //   telemetry.log          hooked by name, its collector stream: `*` selects no telemetry event
 //   ui.render, ui.resolve  passed on unrecorded: one per component per redraw
+//   prompt.edit            passed on unrecorded: one per keystroke, drafts included;
+//                          prompt.submit keeps the text sent
 //   this plugin's own $    passed on unrecorded (next.origin), or appending would log itself
 //   turn.step, a spawn     hooked on their own, as generators: the stream is relayed chunk
 //                          by chunk as it comes, and the end line lists the chunks
@@ -217,7 +219,7 @@ export const register: Register = (on) => {
 
   on("*", ($, e, next) => {
     const event = next.event;
-    if (event === "ui.render" || event === "ui.resolve") return next(e);
+    if (event === "ui.render" || event === "ui.resolve" || event === "prompt.edit") return next(e);
     if (event !== "engine.create") {
       host ??= {
         name: $.plugin.name,
