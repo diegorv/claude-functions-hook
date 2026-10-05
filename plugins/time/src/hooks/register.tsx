@@ -13,7 +13,7 @@ import { Timestamp } from "../components/timestamp.tsx";
 export const register: Register = (on) => {
   const drawnAt = new Map<string, string>(); // message id -> the time of its first drawing
   on("ui.render", { component: "UserMessage" }, async ($, event, next) => {
-    const time = timeFor(drawnAt, event.requestId, $.clock.now());
+    const time = timeFor(drawnAt, event.requestId, await $.clock.now());
     return Timestamp($.ui.resolve(event), time, await next(event));
   });
 };
