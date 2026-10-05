@@ -27,6 +27,11 @@ test("header: repo and Actions link; counts follow", () => {
   assert.equal(model.counts, "1 running · 1 finished");
 });
 
+test("header: a failed count follows when a finished run failed", () => {
+  const model = bandModel(input({ rows: [running(), run({ databaseId: 2, conclusion: "failure" })] }))!;
+  assert.equal(model.counts, "1 running · 1 finished · 1 failed");
+});
+
 test("stale: the header says since when gh fails; clocks keep counting", () => {
   const model = bandModel(input({ rows: [running()], staleSince: T0 + 15_000 }))!;
   assert.equal(model.stale, "gh error for 0m45s");

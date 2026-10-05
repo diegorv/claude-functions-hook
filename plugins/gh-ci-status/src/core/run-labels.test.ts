@@ -39,6 +39,19 @@ test("counts: non-zero counts only", () => {
   assert.equal(counts([running(), running({ databaseId: 2 }), run({ databaseId: 3 })]), "2 running · 1 finished");
 });
 
+test("counts: failed counts the finished runs that show ✗, not the ones waiting on someone", () => {
+  const rows = [
+    running(),
+    run({ databaseId: 2 }),
+    run({ databaseId: 3, conclusion: "failure" }),
+    run({ databaseId: 4, conclusion: "action_required" }),
+    run({ databaseId: 5, conclusion: "cancelled" }),
+  ];
+  assert.equal(counts(rows), "1 running · 4 finished · 1 failed");
+  assert.equal(counts([run({ conclusion: "timed_out" })]), "1 finished · 1 failed");
+  assert.equal(counts([run({ conclusion: "action_required" })]), "1 finished");
+});
+
 test("startedToast: names the workflow and #N, or the branch without a PR", () => {
   assert.equal(startedToast("a/b", running({ pr: 12 })), "⚙ a/b: CI started (#12)");
   assert.equal(startedToast("a/b", running()), "⚙ a/b: CI started (main)");

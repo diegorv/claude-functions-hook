@@ -33,11 +33,15 @@ export function linkOf(repo: string, run: Run): string {
   return number === null ? run.url : `https://github.com/${repo}/pull/${number}`;
 }
 
-// "1 running · 2 finished", non-zero counts only; empty when there is nothing.
+// "1 running · 2 finished · 1 failed", non-zero counts only; empty when there is nothing.
+// Failed counts the finished runs that show a red ✗ (not "Needs you"), so it is a part of finished.
 export function counts(runs: Run[]): string {
   const running = runs.filter(inFlight).length;
   const finished = runs.length - running;
-  return [running ? `${running} running` : "", finished ? `${finished} finished` : ""].filter(Boolean).join(" · ");
+  const failed = runs.filter((run) => phase(run).dot === "✗").length;
+  return [running ? `${running} running` : "", finished ? `${finished} finished` : "", failed ? `${failed} failed` : ""]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export type Toast = { text: string; timeoutMs?: number }; // no timeoutMs: the engine's default (4 s)

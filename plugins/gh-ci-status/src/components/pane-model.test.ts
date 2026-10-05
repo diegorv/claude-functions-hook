@@ -26,7 +26,7 @@ test("every run, not capped at 6, failures first", () => {
   const model = paneModel(input({ runs }));
   assert.equal(model.rows.length, 10);
   assert.equal(model.rows[0].row.phase.label.trim(), "Failed");
-  assert.equal(model.header, "a/b · 10 finished");
+  assert.equal(model.header, "a/b · 10 finished · 1 failed");
 });
 
 test("only the runs that need attention ask for their jobs", () => {
@@ -71,7 +71,7 @@ test("lines fit the pane's width; the header shows a gh outage", () => {
   const long: Details = { state: "loaded", failures: [{ job: "j".repeat(80), step: "s".repeat(80), url: "u" }] };
   const model = paneModel(input({ runs: [failed], details: () => long, columns: 40, staleSince: T0 }));
   assert.ok(cells(model.rows[0].lines[0].text) <= 40);
-  assert.equal(model.header, "a/b · gh error for 1m00s · 1 finished");
+  assert.equal(model.header, "a/b · gh error for 1m00s · 1 finished · 1 failed");
 });
 
 test("a run waiting for approval points at the run, and asks for no jobs", () => {
