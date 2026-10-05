@@ -78,9 +78,11 @@ npm run format     # prettier
 npm run validate   # claude plugin validate
 ```
 
-The API's type declarations (`.claude/types/`) are not in git. Generate them
-with `/plugin-types` in a Claude Code session at the root of this repo, and
-regenerate after updating Claude Code.
+The API's type declarations are not in git. Claude Code writes them to
+`plugins/<name>/.claude-plugin/types/` each time it loads the plugins with
+`--plugin-dir` (a one-prompt headless run,
+`claude -p --plugin-dir plugins "ok"`, will do). Before `npm run typecheck`,
+load the plugins once, and again after updating Claude Code.
 
 ## Plugin layout
 
