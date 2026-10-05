@@ -51,6 +51,10 @@ export type Poller = {
   staleSince: () => number | null; // when gh started failing, while it still does: the rows are from before
 };
 
+// Between polls only an expiring hold changes the band without counting up.
+export const needsRedraw = (counting: boolean, shown: number, lastShown: number): boolean =>
+  counting || shown !== lastShown;
+
 export function createPoller(repo: string, deps: PollerDeps, config: PollerConfig = DEFAULT_CONFIG): Poller {
   let rows: Run[] = [];
   let pushedAt: number | null = null;

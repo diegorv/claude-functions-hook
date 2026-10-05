@@ -5,7 +5,7 @@
 //   ui.render            draws the band above the prompt from the poller's state
 import type { Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
-import { createPoller, type Poller } from "../app/poller.ts";
+import { createPoller, needsRedraw, type Poller } from "../app/poller.ts";
 import { triggersWorkflow } from "../core/trigger-commands.ts";
 import { Band } from "../components/band.tsx";
 import { bandModel } from "../components/band-model.ts";
@@ -40,11 +40,15 @@ export const register: Register = (on) => {
         watch = { repo, poller };
         poller.start();
         // A timer's callback is synchronous; a refresh that fails is retried on the next tick.
+        let lastShown = 0; // rows on the band at the last tick
         $.clock.every(TICK_MS, () => {
           void $.clock.now().then(
             (time) => {
               now = time;
-              if (poller.live() || poller.staleSince() !== null) $.ui.invalidate("ui.render");
+              const counting = poller.live() || poller.staleSince() !== null;
+              const shown = poller.rows().length;
+              if (needsRedraw(counting, shown, lastShown)) $.ui.invalidate("ui.render");
+              lastShown = shown;
             },
             () => {},
           );

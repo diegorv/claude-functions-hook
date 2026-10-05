@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createPoller, DEFAULT_CONFIG, type PollerDeps } from "./poller.ts";
+import { createPoller, DEFAULT_CONFIG, needsRedraw, type PollerDeps } from "./poller.ts";
 import type { Run } from "../core/workflow-run.ts";
 import { at, run, running, T0 } from "../core/fixtures.ts";
 
@@ -248,6 +248,12 @@ test("a gh error is logged once per outage and polling continues", async () => {
   await engine.tick();
   assert.deepEqual(engine.logs, ["a", "b"], "a poll that works ends the outage, so the next one logs again");
   assert.equal(poller.rows().length, 0);
+});
+
+test("needsRedraw: while something counts up, or when a row's hold ran out", () => {
+  assert.equal(needsRedraw(true, 1, 1), true, "a clock or the outage's age is counting");
+  assert.equal(needsRedraw(false, 0, 1), true, "a row expired since the last tick");
+  assert.equal(needsRedraw(false, 1, 1), false, "nothing changed");
 });
 
 test("staleSince: set at the first failed poll, kept through the outage, cleared by the next good one", async () => {
