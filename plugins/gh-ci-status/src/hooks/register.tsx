@@ -19,10 +19,11 @@ import { bandModel } from "../components/band-model.ts";
 import { Pane } from "../components/pane.tsx";
 import { paneModel, shouldClose } from "../components/pane-model.ts";
 import { counts } from "../core/run-labels.ts";
-import { elapsed } from "../utils/text.ts";
+import { cut, elapsed } from "../utils/text.ts";
 
 const TICK_MS = 1000; // the band's clocks move between polls
 const PANE_ID = "ci";
+const LAST_ERROR_CELLS = 120; // the gh failure /gh-ci shows while no repo is found
 
 type Toggled = { kind: "opened" } | { kind: "closed" } | { kind: "unplaced"; reason: string };
 
@@ -160,7 +161,11 @@ export const register: Register = (on) => {
     if (args !== "" && args !== "refresh" && args !== "status") return { text: "Usage: /gh-ci [refresh|status]" };
     if (!watch) {
       startWatch?.();
-      return { text: "No GitHub repo found yet (gh repo view); looking again now. Run /gh-ci again in a moment." };
+      const lastError = startWatch?.lastError();
+      const reason = lastError ? ` Last error: ${cut(lastError, LAST_ERROR_CELLS)}` : "";
+      return {
+        text: `No GitHub repo found yet (gh repo view); looking again now. Run /gh-ci again in a moment.${reason}`,
+      };
     }
     const { repo, poller } = watch;
     if (args === "refresh") {

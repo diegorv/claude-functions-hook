@@ -22,6 +22,28 @@ test("a failed find is logged and tried again by the next call", async () => {
   assert.deepEqual(started, ["a/b"]);
 });
 
+test("lastError: why the last try failed, kept through the next try, cleared once started", async () => {
+  let resolveFind: (repo: string) => void = () => {};
+  const answers = [
+    () => Promise.reject(new Error("gh: not logged in")),
+    () => new Promise<string>((resolve) => (resolveFind = resolve)),
+  ];
+  const startWatch = createStarter(
+    () => answers.shift()!(),
+    async () => {},
+    () => {},
+  );
+  assert.equal(startWatch.lastError(), null);
+  startWatch();
+  await settle();
+  assert.equal(startWatch.lastError(), "gh: not logged in");
+  startWatch();
+  assert.equal(startWatch.lastError(), "gh: not logged in", "kept while the next find runs");
+  resolveFind("a/b");
+  await settle();
+  assert.equal(startWatch.lastError(), null);
+});
+
 test("one find at a time, and none once started", async () => {
   let finds = 0;
   let resolveFind: (repo: string) => void = () => {};
