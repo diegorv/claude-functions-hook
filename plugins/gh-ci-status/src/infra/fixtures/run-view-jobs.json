@@ -1,0 +1,244 @@
+{
+  "jobs": [
+    {
+      "databaseId": 111909992877,
+      "name": "syntax",
+      "conclusion": "success",
+      "url": "https://github.com/Homebrew/brew/actions/runs/37353310727/job/111909992877",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up Homebrew",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install actionlint, shellcheck and shfmt",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache style cache",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run brew style",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run brew typecheck",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache style cache",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up Homebrew",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "databaseId": 111909993692,
+      "name": "tests (generic OS, 2/2)",
+      "conclusion": "failure",
+      "url": "https://github.com/Homebrew/brew/actions/runs/37353310727/job/111909993692",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up Homebrew",
+          "conclusion": "success"
+        },
+        {
+          "name": "Untap untrusted preinstalled taps",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Cache Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run brew config",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install Subversion",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Create parallel test log directory",
+          "conclusion": "success"
+        },
+        {
+          "name": "Restore parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Stage parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Cleanup permissions",
+          "conclusion": "success"
+        },
+        {
+          "name": "Disable Sorbet runtime",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run brew tests",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Collect parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Save parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Get RSpec JUnit XML filenames",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Cache Bundler RubyGems",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Set up Homebrew",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "databaseId": 111909993750,
+      "name": "tests (generic OS, 1/2)",
+      "conclusion": "success",
+      "url": "https://github.com/Homebrew/brew/actions/runs/37353310727/job/111909993750",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up Homebrew",
+          "conclusion": "success"
+        },
+        {
+          "name": "Untap untrusted preinstalled taps",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Cache Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run brew config",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install Subversion",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Create parallel test log directory",
+          "conclusion": "success"
+        },
+        {
+          "name": "Restore parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Stage parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Cleanup permissions",
+          "conclusion": "success"
+        },
+        {
+          "name": "Disable Sorbet runtime",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run brew tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Collect parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Save parallel tests log",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Get RSpec JUnit XML filenames",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache Bundler RubyGems",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up Homebrew",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}
