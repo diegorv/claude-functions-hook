@@ -80,6 +80,9 @@ npm run format     # prettier
 npm run validate   # claude plugin validate
 ```
 
+`claude plugin test` runs every `*.test.ts` in a plugin with the
+`claude-code/testing` kit; these use `node:test`, so it is not used here.
+
 The API's type declarations are not in git. Claude Code writes them to
 `plugins/<name>/.claude-plugin/types/` each time it loads the plugins with
 `--plugin-dir` (a one-prompt headless run,
@@ -98,5 +101,5 @@ plugins/gh-ci-status/
   src/infra/                   external clients (GitHub through gh)
   src/components/              the band's view model and its JSX
   src/hooks/                   the wiring to the engine
-  *.test.ts                    next to the file it tests, run on Node
+  *.test.ts                    next to the file it tests, run with node:test
 ```
