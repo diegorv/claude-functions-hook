@@ -48,8 +48,6 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 claude --plugin-dir /path/to/claude-function-hooks/plugins
 ```
 
-The old `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` flag is ignored; remove it.
-
 Or install them from the marketplace:
 
 ```
@@ -60,7 +58,8 @@ Or install them from the marketplace:
 
 Tested with Claude Code 2.1.289; the API may still change between releases.
 `/plugin` names the mods the session loaded, in a line such as
-`1 mod active · time`.
+`1 mod active · time`. The old `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` flag is
+ignored; remove it.
 
 To turn one off, disable its plugin in the Installed tab of `/plugin`. To turn
 off every installed mod, start the session with `--safe-mode`, which also
