@@ -44,6 +44,7 @@ export type PollerDeps = {
 export type Poller = {
   start: () => void;
   wake: () => void; // a push happened: look now and keep the active pace
+  refresh: () => void; // look now, at the pace the result calls for; no push, so no waiting
   rows: () => Run[];
   waitingSince: () => number | null; // when the push happened, while no run has shown up
   live: () => boolean; // something on the band is counting up: a run in flight, or a push being waited on
@@ -118,15 +119,20 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     timer = deps.after(active ? config.activeMs : config.idleMs, () => void loop());
   };
 
+  const pollNow = () => {
+    timer?.cancel();
+    timer = null;
+    void loop();
+  };
+
   return {
     start: () => void loop(),
     wake: () => {
       pushedAt = deps.now();
       deps.onChange();
-      timer?.cancel();
-      timer = null;
-      void loop();
+      pollNow();
     },
+    refresh: pollNow,
     rows: () => visible(rows, deps.now(), config), // the same rule on what the last poll kept, as time passes
     waitingSince,
     live,

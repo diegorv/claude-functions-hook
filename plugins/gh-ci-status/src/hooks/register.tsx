@@ -6,7 +6,8 @@
 //   ui.render            draws the band above the prompt from the poller's state, and the
 //                        details pane its "details" Button opens
 //   ui.close             notes that the pane is gone, so the next toggle opens it
-//   command.run          /gh-ci opens or closes that pane, band or not
+//   command.run          /gh-ci opens or closes that pane, band or not; /gh-ci refresh polls
+//                        now, /gh-ci status answers with the band's counts
 import type { EngineInterface, Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, needsRedraw, type Poller } from "../app/poller.ts";
@@ -17,6 +18,8 @@ import { Band } from "../components/band.tsx";
 import { bandModel } from "../components/band-model.ts";
 import { Pane } from "../components/pane.tsx";
 import { paneModel, shouldClose } from "../components/pane-model.ts";
+import { counts } from "../core/run-labels.ts";
+import { elapsed } from "../utils/text.ts";
 
 const TICK_MS = 1000; // the band's clocks move between polls
 const PANE_ID = "ci";
@@ -68,7 +71,11 @@ export const register: Register = (on) => {
     if (!event.isInteractive) return next(event); // -p and the SDK draw nowhere
     const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
     void $.command
-      .register({ name: "gh-ci", description: "Show or hide this repo's GitHub Actions runs and their failed jobs" })
+      .register({
+        name: "gh-ci",
+        description: "Show or hide this repo's GitHub Actions runs and their failed jobs",
+        argumentHint: "[refresh|status]",
+      })
       .catch((error: unknown) =>
         $.ui.log(`/gh-ci: ${error instanceof Error ? error.message : String(error)}`, { to: "debug" }),
       );
@@ -148,10 +155,22 @@ export const register: Register = (on) => {
   });
 
   // Registered only in an interactive session (session.start), where the pane can draw.
-  on("command.run", { command: "gh-ci" }, async ($) => {
+  on("command.run", { command: "gh-ci" }, async ($, event) => {
+    const args = event.args.trim();
+    if (args !== "" && args !== "refresh" && args !== "status") return { text: "Usage: /gh-ci [refresh|status]" };
     if (!watch) {
       startWatch?.();
       return { text: "No GitHub repo found yet (gh repo view); looking again now. Run /gh-ci again in a moment." };
+    }
+    const { repo, poller } = watch;
+    if (args === "refresh") {
+      poller.refresh();
+      return { text: "Refreshing CI runs." };
+    }
+    if (args === "status") {
+      const staleSince = poller.staleSince();
+      const stale = staleSince !== null ? ` · gh error for ${elapsed((await $.clock.now()) - staleSince)}` : "";
+      return { text: `${repo}${stale} · ${counts(poller.rows()) || "no runs on the band"}` };
     }
     const text = commandReply(await togglePane($, watch.details, paneDrawn));
     return text ? { text } : {};

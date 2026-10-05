@@ -125,6 +125,21 @@ test("wake: cancels the timer, enters waiting, and a new run clears the waiting"
   assert.deepEqual(engine.toasts, ["⚙ a/b: CI started (main)"]);
 });
 
+test("refresh: polls now, with no waiting, at the pace the result calls for", async () => {
+  const engine = fakeEngine([() => Promise.resolve([]), () => Promise.resolve([running({ databaseId: 7 })])]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  assert.equal(engine.nextDelay(), DEFAULT_CONFIG.idleMs);
+  poller.refresh();
+  await engine.settle();
+  assert.equal(engine.calls(), 2, "polled without waiting for the idle timer");
+  assert.equal(poller.waitingSince(), null, "no push, so no waiting line");
+  assert.equal(poller.rows().length, 1);
+  assert.equal(engine.liveTimers(), 1, "the idle timer was replaced, not doubled");
+  assert.equal(engine.nextDelay(), DEFAULT_CONFIG.activeMs, "a run in flight sets the active pace");
+});
+
 test("a run created after the push clears the waiting, even if already finished", async () => {
   const engine = fakeEngine([
     () => Promise.resolve([]),
