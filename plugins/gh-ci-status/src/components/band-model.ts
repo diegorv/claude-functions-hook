@@ -1,7 +1,7 @@
 // The band's view model: every rendering decision, as plain data. band.tsx
 // maps this to elements and decides nothing, so this is where the drawing is
 // tested.
-import { inFlight, phase, prNumber, LABEL_WIDTH, type Phase, type Run } from "../core/workflow-run.ts";
+import { byAttention, inFlight, phase, prNumber, LABEL_WIDTH, type Phase, type Run } from "../core/workflow-run.ts";
 import { branchLabel, clock, counts, linkOf, REF_MAX, titleOf, workflowLabel } from "../core/run-labels.ts";
 import { cells, cut, elapsed } from "../utils/text.ts";
 
@@ -83,7 +83,8 @@ export function bandModel(input: BandInput): BandModel | null {
   // never grows past maxRows; below that it can, and the engine scrolls it.
   const room = input.maxRows - 1 - (waitingFor !== null ? 1 : 0);
   const fits = input.rows.length <= Math.min(MAX_ROWS, room);
-  const shown = input.rows.slice(0, fits ? input.rows.length : Math.max(0, Math.min(MAX_ROWS, room - 1)));
+  // Sorted before the cut, so a failure is never the row the cap hides.
+  const shown = byAttention(input.rows).slice(0, fits ? input.rows.length : Math.max(0, Math.min(MAX_ROWS, room - 1)));
   const refs = shown.map((run) => cut(branchLabel(run), REF_MAX));
   const workflows = shown.map((run) => cut(workflowLabel(run), WORKFLOW_MAX));
   const clocks = shown.map((run) => clock(run, input.now));

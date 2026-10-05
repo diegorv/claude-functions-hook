@@ -177,8 +177,15 @@ test("a run without a workflow name still gets a label", () => {
 });
 
 test("an unknown conclusion still fits the status column", () => {
-  const [row] = bandModel(input({ rows: [run({ conclusion: "action_required" })] }))!.rows;
+  const [row] = bandModel(input({ rows: [run({ conclusion: "a_much_longer_new_state" })] }))!.rows;
   assert.equal(row.phase.label.length, LABEL_WIDTH);
+});
+
+test("rows: a failure is never the one the cap hides", () => {
+  const rows = [...runs(6), run({ databaseId: 9, conclusion: "failure" })];
+  const model = bandModel(input({ rows, maxRows: 40 }))!;
+  assert.equal(model.rows[0].phase.label.trim(), "Failed");
+  assert.equal(model.hiddenCount, 1);
 });
 
 test("finished rows keep their duration; updatedAt is the end", () => {

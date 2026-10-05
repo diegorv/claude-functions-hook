@@ -24,14 +24,20 @@ export type Phase = { dot: string; label: string; color?: string; dim?: boolean 
 const LABELS = {
   running: "Running",
   queued: "Queued",
+  waiting: "Waiting", // for a deployment's approval or wait timer
   success: "Success",
   failure: "Failed",
   timed_out: "Timed out",
   startup_failure: "Failed",
+  action_required: "Needs you", // a run that waits on someone, such as approval for a fork's PR
   cancelled: "Cancelled",
+  skipped: "Skipped",
+  neutral: "Neutral",
+  stale: "Stale",
 } as const;
 
-// The status column is as wide as the longest label.
+// The status column is as wide as the longest label; one GitHub adds later
+// shows capitalized; the band cuts it to that width.
 export const LABEL_WIDTH = Math.max(...Object.values(LABELS).map((label) => label.length));
 
 export const inFlight = (run: Run): boolean => run.status !== "completed";
@@ -70,6 +76,7 @@ export function withPrs(runs: Run[], prs: Pr[]): Run[] {
 
 export function phase(run: Run): Phase {
   if (run.status === "in_progress") return { dot: "◐", label: LABELS.running, color: "yellow" };
+  if (run.status === "waiting") return { dot: "○", label: LABELS.waiting, color: "yellow" };
   if (inFlight(run)) return { dot: "○", label: LABELS.queued, color: "yellow" };
   switch (run.conclusion) {
     case "success":
@@ -79,12 +86,29 @@ export function phase(run: Run): Phase {
       return { dot: "✗", label: LABELS[run.conclusion], color: "red" };
     case "timed_out":
       return { dot: "✗", label: LABELS.timed_out, color: "red" };
+    case "action_required":
+      return { dot: "!", label: LABELS.action_required, color: "yellow" };
     case "cancelled":
       return { dot: "⊘", label: LABELS.cancelled, color: "red" };
-    default:
-      return { dot: "·", label: run.conclusion ?? "Done", dim: true };
+    case "skipped":
+    case "neutral":
+    case "stale":
+      return { dot: "·", label: LABELS[run.conclusion], dim: true };
+    default: {
+      const label = (run.conclusion ?? "done").replaceAll("_", " ");
+      return { dot: "·", label: label.charAt(0).toUpperCase() + label.slice(1), dim: true };
+    }
   }
 }
+
+// `cancelled` stays with the rest: a person usually cancelled it.
+const NEEDS_ATTENTION = new Set(["failure", "startup_failure", "timed_out", "action_required"]);
+const group = (run: Run) => (inFlight(run) ? 0 : NEEDS_ATTENTION.has(run.conclusion ?? "") ? 1 : 2);
+
+// In flight first, then what failed or waits on someone, then the rest; gh's
+// newest-first order holds within each group (the sort is stable), so a row
+// moves only when its state changes.
+export const byAttention = (runs: Run[]): Run[] => runs.toSorted((a, b) => group(a) - group(b));
 
 // Stays on the band: everything in flight, plus what finished less than holdMs ago.
 export function visible(runs: Run[], now: number, holdMs: number): Run[] {

@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inFlight, phase, prNumber, startedByPerson, transitions, visible, withPrs } from "./workflow-run.ts";
+import {
+  byAttention,
+  inFlight,
+  LABEL_WIDTH,
+  phase,
+  prNumber,
+  startedByPerson,
+  transitions,
+  visible,
+  withPrs,
+} from "./workflow-run.ts";
 import { at, run, running, T0 } from "./fixtures.ts";
 
 test("inFlight: anything not completed", () => {
@@ -54,6 +64,48 @@ test("phase: color per state", () => {
   assert.equal(phase(run({ conclusion: "skipped" })).dim, true);
   assert.equal(phase(run({ conclusion: "startup_failure" })).label, "Failed");
   assert.equal(phase(run({ conclusion: "timed_out" })).label, "Timed out");
+});
+
+test("phase: every conclusion gets a capitalized label that fits the column", () => {
+  assert.equal(LABEL_WIDTH, 9, "the column does not grow");
+  for (const conclusion of ["skipped", "neutral", "stale", "action_required"]) {
+    const label = phase(run({ conclusion })).label;
+    assert.match(label, /^[A-Z]/);
+    assert.ok(label.length <= LABEL_WIDTH, label);
+  }
+  assert.equal(phase(run({ conclusion: "some_new_state" })).label, "Some new state");
+  assert.equal(phase(run({ conclusion: null })).label, "Done");
+});
+
+test("phase: action_required asks for attention; skipped stays dim", () => {
+  assert.deepEqual(phase(run({ conclusion: "action_required" })), { dot: "!", label: "Needs you", color: "yellow" });
+  assert.equal(phase(run({ conclusion: "skipped" })).dim, true);
+});
+
+test("phase: a run waiting on a deployment says so", () => {
+  assert.deepEqual(phase(run({ status: "waiting", conclusion: null })), {
+    dot: "○",
+    label: "Waiting",
+    color: "yellow",
+  });
+});
+
+test("byAttention: in flight, then failed or waiting on someone, then the rest; gh's order within each", () => {
+  const runs = [
+    run({ databaseId: 1 }),
+    run({ databaseId: 2, conclusion: "failure" }),
+    running({ databaseId: 3 }),
+    run({ databaseId: 4, conclusion: "cancelled" }),
+    run({ databaseId: 5, conclusion: "timed_out" }),
+    run({ databaseId: 6, status: "queued", conclusion: null }),
+    run({ databaseId: 7, conclusion: "action_required" }),
+    run({ databaseId: 8, conclusion: "skipped" }),
+  ];
+  assert.deepEqual(
+    byAttention(runs).map((candidate) => candidate.databaseId),
+    [3, 6, 2, 5, 7, 1, 4, 8],
+  );
+  assert.equal(runs[0].databaseId, 1, "the input is left as it was");
 });
 
 test("visible: in flight always; finished only within the hold", () => {
