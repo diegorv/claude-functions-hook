@@ -1,4 +1,4 @@
-# claude-function-hooks
+# claude-mods-diegorv
 
 Claude Code mods, packaged as a plugin marketplace. A mod is a plugin whose
 hooks module (TypeScript, here) runs inside the session. Mods need Claude Code
@@ -45,16 +45,20 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 
 ```bash
 # mods need Claude Code 2.1.287 or later
-claude --plugin-dir /path/to/claude-function-hooks/plugins
+claude --plugin-dir /path/to/claude-mods-diegorv/plugins
 ```
 
 Or install them from the marketplace:
 
 ```
-/plugin marketplace add diegorv/claude-functions-hook
-/plugin install gh-ci-status@claude-function-hooks
-/plugin install time@claude-function-hooks
+/plugin marketplace add diegorv/claude-mods-diegorv
+/plugin install gh-ci-status@claude-mods-diegorv
+/plugin install time@claude-mods-diegorv
 ```
+
+The marketplace was renamed, and the install ids with it. If you installed
+under the old name, run `/plugin marketplace remove claude-function-hooks`,
+which also uninstalls its plugins, then the three lines above.
 
 Tested with Claude Code 2.1.289; the API may still change between releases.
 `/plugin` names the mods the session loaded, in a line such as
