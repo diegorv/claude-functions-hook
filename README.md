@@ -30,11 +30,14 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   network or an expired token, it runs again at the next command that wakes
   the band (below), so after `gh auth login`, or once the network is back,
   a push is enough. Each failure goes to the debug log (`claude --debug`).
+  While gh fails, the header says so (`gh error for 2m05s`) and keeps the
+  last rows.
 - Polls `gh run list` every 60 s, and every 15 s while a run is in flight or
   for 6 minutes after a push. A `git push`, `git subtree push`, `gh pr merge`,
   `gh workflow run` or `gh run rerun` in Bash wakes it.
 - `#N` links to the PR (matched by branch through `gh pr list`, or from
-  `refs/pull/N/head`); the workflow name links to the run.
+  `refs/pull/N/head`); the workflow name (on a narrow band, the status)
+  links to the run.
 - Shows runs from a push, a pull request, a manual dispatch, the merge
   queue, a release, or a workflow another one started, and leaves cron and
   issue bots out. Toasts when a run starts and when runs finish: one per
