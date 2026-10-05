@@ -8,6 +8,11 @@
       "name": "gh-ci-status",
       "source": "./plugins/gh-ci-status",
       "description": "GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run"
+    },
+    {
+      "name": "activity-log",
+      "source": "./plugins/activity-log",
+      "description": "Every event of the session, tool calls and their full results included, appended to a JSONL file per session"
     }
   ]
 }
