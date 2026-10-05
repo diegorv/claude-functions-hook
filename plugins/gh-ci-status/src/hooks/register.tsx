@@ -5,6 +5,7 @@
 //                        when that failed at session start
 //   ui.render            draws the band above the prompt from the poller's state, and the
 //                        details pane its "details" Button opens
+//   command.run          /gh-ci opens or closes that pane, band or not
 import type { EngineInterface, Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, needsRedraw, type Poller } from "../app/poller.ts";
@@ -20,6 +21,13 @@ const TICK_MS = 1000; // the band's clocks move between polls
 const PANE_ID = "ci";
 
 type Toggled = { kind: "opened" } | { kind: "closed" } | { kind: "unplaced"; reason: string };
+
+// What /gh-ci says after it toggled the pane; opening needs no words, the pane is the answer.
+function commandReply(toggled: Toggled): string | undefined {
+  if (toggled.kind === "closed") return "Closed the CI pane.";
+  if (toggled.kind === "unplaced") return `The CI pane did not open: ${toggled.reason}`;
+  return undefined;
+}
 
 // Opens the details pane, or closes it when it is the one shown: the engine's
 // record of the plugin's panes says which, so a reload or a close by Esc stays
@@ -53,6 +61,11 @@ export const register: Register = (on) => {
   on("session.start", ($, event, next) => {
     if (!event.isInteractive) return next(event); // -p and the SDK draw nowhere
     const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
+    void $.command
+      .register({ name: "gh-ci", description: "Show or hide this repo's GitHub Actions runs and their failed jobs" })
+      .catch((error: unknown) =>
+        $.ui.log(`/gh-ci: ${error instanceof Error ? error.message : String(error)}`, { to: "debug" }),
+      );
 
     // Finding the repo takes a gh call; the session must not wait for it.
     startWatch = createStarter(
@@ -126,6 +139,16 @@ export const register: Register = (on) => {
     return model
       ? Band($.ui.resolve(event), model, () => void togglePane($, details).catch(logFailure($)))
       : next(event);
+  });
+
+  // Registered only in an interactive session (session.start), where the pane can draw.
+  on("command.run", { command: "gh-ci" }, async ($) => {
+    if (!watch) {
+      startWatch?.();
+      return { text: "No GitHub repo found yet (gh repo view); looking again now. Run /gh-ci again in a moment." };
+    }
+    const text = commandReply(await togglePane($, watch.details));
+    return text ? { text } : {};
   });
 
   on("ui.render", { component: "Pane", surface: "terminal" }, async ($, event, next) => {

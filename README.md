@@ -49,6 +49,8 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   list, and under each failed one its failed jobs and steps, each linking to
   the job: ctrl+x tab to focus the band, then `d`; `d` or Esc closes it. A
   mouse click reaches it only in fullscreen.
+- `/gh-ci` opens or closes the same pane, band or not; before the repo is
+  found it looks again and says so.
 
 ## Use
 
