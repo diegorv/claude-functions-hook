@@ -6,6 +6,7 @@ export type Run = {
   status: "queued" | "in_progress" | "waiting" | "pending" | "requested" | "completed";
   conclusion: string | null; // success | failure | cancelled | skipped | timed_out | ...
   event: string; // what triggered the run: push, pull_request, schedule, issue_comment, ...
+  workflowDatabaseId: number; // the workflow's id: a renamed workflow keeps it
   workflowName: string;
   headBranch: string;
   displayTitle: string;
@@ -105,16 +106,36 @@ export function phase(run: Run): Phase {
 
 // `cancelled` stays with the rest: a person usually cancelled it.
 const NEEDS_ATTENTION = new Set(["failure", "startup_failure", "timed_out", "action_required"]);
-const group = (run: Run) => (inFlight(run) ? 0 : NEEDS_ATTENTION.has(run.conclusion ?? "") ? 1 : 2);
+const needsAttention = (run: Run) => !inFlight(run) && NEEDS_ATTENTION.has(run.conclusion ?? "");
+const group = (run: Run) => (inFlight(run) ? 0 : needsAttention(run) ? 1 : 2);
 
 // In flight first, then what failed or waits on someone, then the rest; gh's
 // newest-first order holds within each group (the sort is stable), so a row
 // moves only when its state changes.
 export const byAttention = (runs: Run[]): Run[] => runs.toSorted((a, b) => group(a) - group(b));
 
-// Stays on the band: everything in flight, plus what finished less than holdMs ago.
-export function visible(runs: Run[], now: number, holdMs: number): Run[] {
-  return runs.filter((run) => inFlight(run) || now - Date.parse(run.updatedAt) < holdMs);
+export type Holds = {
+  holdMs: number; // how long a finished run stays on the band
+  failedHoldMs: number; // how long one that needs attention can stay, at most
+};
+
+// Stays on the band: everything in flight; what needs attention (as byAttention
+// groups it) until a newer run of the same workflow, branch and event shows up,
+// or failedHoldMs after it ended; anything else holdMs after it ended.
+export function visible(runs: Run[], now: number, holds: Holds): Run[] {
+  const superseded = (run: Run) =>
+    runs.some(
+      (other) =>
+        other.workflowDatabaseId === run.workflowDatabaseId &&
+        other.headBranch === run.headBranch &&
+        other.event === run.event &&
+        Date.parse(other.createdAt) > Date.parse(run.createdAt),
+    );
+  return runs.filter((run) => {
+    if (inFlight(run)) return true;
+    const age = now - Date.parse(run.updatedAt);
+    return needsAttention(run) ? age < holds.failedHoldMs && !superseded(run) : age < holds.holdMs;
+  });
 }
 
 type Transitions = {

@@ -10,6 +10,7 @@ export function run(overrides: Partial<Run> = {}): Run {
     status: "completed",
     conclusion: "success",
     event: "push",
+    workflowDatabaseId: 10,
     workflowName: "CI",
     headBranch: "main",
     displayTitle: "Fix login",

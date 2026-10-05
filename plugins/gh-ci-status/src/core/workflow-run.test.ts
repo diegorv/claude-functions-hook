@@ -113,17 +113,44 @@ test("byAttention: in flight, then failed or waiting on someone, then the rest; 
   assert.equal(runs[0].databaseId, 1, "the input is left as it was");
 });
 
+const holds = { holdMs: 5 * 60_000, failedHoldMs: 30 * 60_000 };
+const ids = (runs: { databaseId: number }[]) => runs.map((candidate) => candidate.databaseId);
+
 test("visible: in flight always; finished only within the hold", () => {
-  const holdMs = 5 * 60_000;
   const runs = [
     running(),
     run({ databaseId: 2, updatedAt: at(4 * 60_000) }),
     run({ databaseId: 3, updatedAt: at(-10 * 60_000) }),
   ];
-  assert.deepEqual(
-    visible(runs, T0 + 5 * 60_000, holdMs).map((candidate) => candidate.databaseId),
-    [1, 2],
+  assert.deepEqual(ids(visible(runs, T0 + 5 * 60_000, holds)), [1, 2]);
+});
+
+test("visible: what needs attention stays up to 30 minutes, the rest 5", () => {
+  const runs = ["failure", "timed_out", "startup_failure", "action_required", "success", "cancelled"].map(
+    (conclusion, index) => run({ databaseId: index + 1, workflowName: `W${index}`, conclusion, updatedAt: at(0) }),
   );
+  assert.deepEqual(ids(visible(runs, T0 + 10 * 60_000, holds)), [1, 2, 3, 4]);
+  assert.deepEqual(ids(visible(runs, T0 + 30 * 60_000, holds)), []);
+});
+
+test("visible: a failure leaves once a newer run of the same workflow and branch shows up", () => {
+  const failed = run({ databaseId: 1, conclusion: "failure", createdAt: at(0), updatedAt: at(60_000) });
+  const later = T0 + 10 * 60_000;
+  const retry = running({ databaseId: 2, createdAt: at(5 * 60_000) });
+  assert.deepEqual(ids(visible([retry, failed], later, holds)), [2], "a newer run in flight replaces it");
+  const fixed = run({ databaseId: 2, createdAt: at(5 * 60_000), updatedAt: at(6 * 60_000) });
+  assert.deepEqual(ids(visible([fixed, failed], later, holds)), [2], "so does a newer one that finished");
+  const otherBranch = running({ databaseId: 3, headBranch: "other", createdAt: at(5 * 60_000) });
+  const otherWorkflow = running({ databaseId: 4, workflowDatabaseId: 20, createdAt: at(5 * 60_000) });
+  assert.deepEqual(ids(visible([otherBranch, otherWorkflow, failed], later, holds)), [3, 4, 1]);
+  const older = run({ databaseId: 5, createdAt: at(-60_000), updatedAt: at(-30_000) });
+  assert.deepEqual(ids(visible([failed, older], later, holds)), [1], "an older run does not");
+});
+
+test("visible: a newer push run does not hide a failed pull_request run of the same workflow and branch", () => {
+  const failed = run({ databaseId: 1, event: "pull_request", conclusion: "failure", updatedAt: at(60_000) });
+  const push = running({ databaseId: 2, event: "push", createdAt: at(5 * 60_000) });
+  assert.deepEqual(ids(visible([push, failed], T0 + 10 * 60_000, holds)), [2, 1]);
 });
 
 test("transitions: started, finished, and the next set", () => {

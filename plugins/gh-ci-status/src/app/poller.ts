@@ -7,16 +7,16 @@ import {
   transitions,
   visible,
   withPrs,
+  type Holds,
   type Pr,
   type Run,
 } from "../core/workflow-run.ts";
 import { branchLabel, clock, REF_MAX, workflowLabel } from "../core/run-labels.ts";
 import { cut } from "../utils/text.ts";
 
-type PollerConfig = {
+type PollerConfig = Holds & {
   activeMs: number; // interval while a run is in flight or a push is waiting
   idleMs: number; // interval while nothing is happening
-  holdMs: number; // how long a finished run stays on the band
   watchMs: number; // how long a push keeps the active pace
 };
 
@@ -24,6 +24,7 @@ export const DEFAULT_CONFIG: PollerConfig = {
   activeMs: 15_000,
   idleMs: 60_000,
   holdMs: 5 * 60_000,
+  failedHoldMs: 30 * 60_000,
   watchMs: 6 * 60_000,
 };
 
@@ -96,7 +97,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     const since = pushedAt; // narrowed copy: TS resets `let` narrowing inside the callback
     if (since !== null && runs.some((run) => Date.parse(run.createdAt) >= since - CLOCK_SKEW_MS)) pushedAt = null; // the push's run is here
     announce(changes.started, changes.finished);
-    rows = visible(runs, deps.now(), config.holdMs);
+    rows = visible(runs, deps.now(), config);
     return live();
   };
 
@@ -125,7 +126,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
       timer = null;
       void loop();
     },
-    rows: () => visible(rows, deps.now(), config.holdMs),
+    rows: () => visible(rows, deps.now(), config), // the same rule on what the last poll kept, as time passes
     waitingSince,
     live,
     staleSince: () => staleSince,
