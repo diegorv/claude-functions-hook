@@ -155,7 +155,10 @@ test("a rerun clears the waiting: same id, old createdAt, a new startedAt", asyn
   const old = run({ databaseId: 7, createdAt: at(-3_600_000), startedAt: at(-3_600_000), updatedAt: at(-3_500_000) });
   const engine = fakeEngine([
     () => Promise.resolve([old]),
-    () => Promise.resolve([running({ ...old, startedAt: at(2_000), updatedAt: at(2_000) })]),
+    () =>
+      Promise.resolve([
+        { ...old, status: "in_progress", conclusion: null, startedAt: at(2_000), updatedAt: at(2_000) },
+      ]),
   ]);
   const poller = createPoller("a/b", engine.deps);
   poller.start();
@@ -332,4 +335,23 @@ test("staleSince: set at the first failed poll, kept through the outage, cleared
   await engine.tick();
   assert.equal(poller.staleSince(), null);
   assert.equal(engine.changeCount(), 4, "every poll, failed or not, asks for a redraw");
+});
+
+test("fetched: null before the first good poll, then every listed run, held or not", async () => {
+  const old = run({ databaseId: 2, updatedAt: at(-60 * 60_000) });
+  const engine = fakeEngine([() => Promise.reject(new Error("offline")), () => Promise.resolve([running(), old])]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  assert.equal(poller.fetched(), null);
+  await engine.tick();
+  assert.deepEqual(
+    poller.fetched()?.map((candidate) => candidate.databaseId),
+    [1, 2],
+  );
+  assert.deepEqual(
+    poller.rows().map((candidate) => candidate.databaseId),
+    [1],
+    "the band keeps only what its holds allow",
+  );
 });

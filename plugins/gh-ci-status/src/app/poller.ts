@@ -48,6 +48,7 @@ export type Poller = {
   waitingSince: () => number | null; // when the push happened, while no run has shown up
   live: () => boolean; // something on the band is counting up: a run in flight, or a push being waited on
   staleSince: () => number | null; // when gh started failing, while it still does: the rows are from before
+  fetched: () => Run[] | null; // every run the last good poll listed, holds or not; null before the first
 };
 
 // Between polls only an expiring hold changes the band without counting up.
@@ -56,6 +57,7 @@ export const needsRedraw = (counting: boolean, shown: number, lastShown: number)
 
 export function createPoller(repo: string, deps: PollerDeps, config: PollerConfig = DEFAULT_CONFIG): Poller {
   let rows: Run[] = [];
+  let fetched: Run[] | null = null;
   let pushedAt: number | null = null;
   let seen: ReadonlySet<number> = new Set();
   let firstPoll = true; // the first poll only learns what is already running, without notifying
@@ -89,6 +91,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
   const poll = async (): Promise<boolean> => {
     const runs = await fetchRuns();
     if (runs === null) return waiting();
+    fetched = runs;
 
     const changes = transitions(seen, runs);
     seen = changes.seen;
@@ -128,5 +131,6 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     waitingSince,
     live,
     staleSince: () => staleSince,
+    fetched: () => fetched,
   };
 }

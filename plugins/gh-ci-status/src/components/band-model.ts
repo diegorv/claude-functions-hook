@@ -19,7 +19,7 @@ export type BandInput = {
 // whitespace that aligns the column, kept outside the link.
 export type Cell = { text: string; href: string | null; pad: string };
 
-type RowModel = {
+export type RowModel = {
   ref: Cell; // #N linking to the PR, or the dim branch name
   phase: Phase & { href: string | null }; // links to the run when the workflow is dropped
   workflow: Cell | null; // links to the run; null when the band is too narrow
@@ -75,6 +75,29 @@ export function columnWidths(needed: Widths, columns: number): Widths {
 
 const widest = (texts: string[]) => Math.max(0, ...texts.map(cells));
 
+// One row per run, its columns sized together to `columns` cells; the band and the details pane draw these.
+export function runRows(repo: string, runs: Run[], now: number, columns: number): RowModel[] {
+  const refs = runs.map((run) => cut(branchLabel(run), REF_MAX));
+  const workflows = runs.map((run) => cut(workflowLabel(run), WORKFLOW_MAX));
+  const clocks = runs.map((run) => clock(run, now));
+  const titles = runs.map((run) => cut(titleOf(run), Infinity));
+  const width = columnWidths(
+    { ref: widest(refs), workflow: widest(workflows), clock: widest(clocks), title: widest(titles) },
+    columns,
+  );
+  return runs.map((run, index): RowModel => {
+    const hasPr = prNumber(run) !== null;
+    const p = phase(run);
+    return {
+      ref: cell(cut(refs[index], width.ref), hasPr ? linkOf(repo, run) : null, width.ref),
+      phase: { ...p, label: cut(p.label, LABEL_WIDTH).padEnd(LABEL_WIDTH), href: width.workflow ? null : run.url },
+      workflow: width.workflow ? cell(cut(workflows[index], width.workflow), run.url, width.workflow) : null,
+      clock: clocks[index].padStart(width.clock),
+      title: width.title && titles[index] ? cell(cut(titles[index], width.title), hasPr ? null : run.url) : null,
+    };
+  });
+}
+
 // Null when there is nothing to draw: no rows, no push being waited on, and no gh outage past a blip.
 export function bandModel(input: BandInput): BandModel | null {
   const waitingFor =
@@ -91,34 +114,13 @@ export function bandModel(input: BandInput): BandModel | null {
   const fits = input.rows.length <= Math.min(MAX_ROWS, room);
   // Sorted before the cut, so a failure is never the row the cap hides.
   const shown = byAttention(input.rows).slice(0, fits ? input.rows.length : Math.max(0, Math.min(MAX_ROWS, room - 1)));
-  const refs = shown.map((run) => cut(branchLabel(run), REF_MAX));
-  const workflows = shown.map((run) => cut(workflowLabel(run), WORKFLOW_MAX));
-  const clocks = shown.map((run) => clock(run, input.now));
-  const titles = shown.map((run) => cut(titleOf(run), Infinity));
-  const width = columnWidths(
-    { ref: widest(refs), workflow: widest(workflows), clock: widest(clocks), title: widest(titles) },
-    input.columns,
-  );
-
-  const rows = shown.map((run, index): RowModel => {
-    const hasPr = prNumber(run) !== null;
-    const p = phase(run);
-    return {
-      ref: cell(cut(refs[index], width.ref), hasPr ? linkOf(input.repo, run) : null, width.ref),
-      phase: { ...p, label: cut(p.label, LABEL_WIDTH).padEnd(LABEL_WIDTH), href: width.workflow ? null : run.url },
-      workflow: width.workflow ? cell(cut(workflows[index], width.workflow), run.url, width.workflow) : null,
-      clock: clocks[index].padStart(width.clock),
-      title: width.title && titles[index] ? cell(cut(titles[index], width.title), hasPr ? null : run.url) : null,
-    };
-  });
-
   return {
     repo: cell(input.repo, `https://github.com/${input.repo}`),
     actions: cell("Actions", `https://github.com/${input.repo}/actions`),
     counts: counts(input.rows),
     waitingFor,
     stale,
-    rows,
+    rows: runRows(input.repo, shown, input.now, input.columns),
     hiddenCount: input.rows.length - shown.length,
   };
 }

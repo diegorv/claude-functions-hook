@@ -4,6 +4,7 @@ import {
   attemptStartedAt,
   byAttention,
   inFlight,
+  jobFailures,
   LABEL_WIDTH,
   phase,
   prNumber,
@@ -194,4 +195,36 @@ test("visible: a rerun of an older run does not end a later failure", () => {
     visible([failed, rerunOfOlder], T0 + 180_000, holds).map((candidate) => candidate.databaseId),
     [2, 1],
   );
+});
+
+test("jobFailures: the failed jobs, each with its first failed step, linking to the job", () => {
+  const jobs = [
+    { databaseId: 1, name: "lint", conclusion: "success", steps: [] },
+    {
+      databaseId: 2,
+      name: "test",
+      conclusion: "failure",
+      steps: [
+        { name: "Set up job", conclusion: "success" },
+        { name: "Run npm test", conclusion: "failure" },
+        { name: "Post", conclusion: "skipped" },
+      ],
+    },
+    { databaseId: 3, name: "e2e", conclusion: "timed_out", steps: [{ name: "Run", conclusion: "success" }] },
+  ];
+  assert.deepEqual(jobFailures(run(), jobs), [
+    { job: "test", step: "Run npm test", url: "https://github.com/a/b/actions/runs/1/job/2" },
+    { job: "e2e", step: null, url: "https://github.com/a/b/actions/runs/1/job/3" },
+  ]);
+});
+
+test("jobFailures: the job's own url when gh gives one", () => {
+  const job = {
+    databaseId: 2,
+    name: "test",
+    conclusion: "failure",
+    steps: [],
+    url: "https://github.com/a/b/actions/runs/1/job/77",
+  };
+  assert.equal(jobFailures(run(), [job])[0].url, "https://github.com/a/b/actions/runs/1/job/77");
 });

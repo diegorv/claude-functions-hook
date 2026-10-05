@@ -3,20 +3,45 @@
 //   session.start        finds the repo through its remote and starts the poller
 //   classic.PostToolUse  a push or merge in Bash wakes the poller, or finds the repo again
 //                        when that failed at session start
-//   ui.render            draws the band above the prompt from the poller's state
-import type { Register } from "claude-code";
+//   ui.render            draws the band above the prompt from the poller's state, and the
+//                        details pane its "details" Button opens
+import type { EngineInterface, Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, needsRedraw, type Poller } from "../app/poller.ts";
 import { createStarter, type Starter } from "../app/starter.ts";
+import { createDetails, type DetailsCache } from "../app/details.ts";
 import { triggersWorkflow } from "../core/trigger-commands.ts";
 import { Band } from "../components/band.tsx";
 import { bandModel } from "../components/band-model.ts";
+import { Pane } from "../components/pane.tsx";
+import { paneModel } from "../components/pane-model.ts";
 
 const TICK_MS = 1000; // the band's clocks move between polls
+const PANE_ID = "ci";
+
+type Toggled = { kind: "opened" } | { kind: "closed" } | { kind: "unplaced"; reason: string };
+
+// Opens the details pane, or closes it when it is the one shown: the engine's
+// record of the plugin's panes says which, so a reload or a close by Esc stays
+// in step. Open but behind another tab, it is opened again, which raises it.
+async function togglePane($: EngineInterface, details: DetailsCache): Promise<Toggled> {
+  if ((await $.ui.panes()).some((pane) => pane.id === PANE_ID && pane.isShown)) {
+    await $.ui.close({ id: PANE_ID });
+    return { kind: "closed" };
+  }
+  details.retryFailed();
+  // Asked for (a press or a command), so the surface places it at any width; toasts stay on, it is not a dialog.
+  const opened = await $.ui.open({ id: PANE_ID, title: "CI", focus: true, closeOnEscape: true });
+  return opened.isPlaced ? { kind: "opened" } : { kind: "unplaced", reason: opened.reason };
+}
+
+// For a press's promise, which nothing awaits.
+const logFailure = ($: EngineInterface) => (error: unknown) =>
+  $.ui.log(error instanceof Error ? error.message : String(error), { to: "debug" });
 
 export const register: Register = (on) => {
   // Set once the repo is found; null until then, or when there is no GitHub repo.
-  let watch: { repo: string; poller: Poller } | null = null;
+  let watch: { repo: string; poller: Poller; details: DetailsCache } | null = null;
   // Set by session.start; finds the repo and starts the watch, again on a push while it is not found.
   let startWatch: Starter | null = null;
   // A push or merge seen before the watch started: the poller wakes on it once it does.
@@ -44,7 +69,7 @@ export const register: Register = (on) => {
           log: (text) => $.ui.log(text, { to: "debug" }), // the band's header shows the outage
         });
         // No second poller: what can throw runs before this line, and once `watch` is set a push wakes it.
-        watch = { repo, poller };
+        watch = { repo, poller, details: createDetails(github.runJobs, () => $.ui.invalidate("ui.render")) };
         poller.start();
         if (pendingWake) {
           pendingWake = false;
@@ -97,6 +122,26 @@ export const register: Register = (on) => {
       maxRows: event.props.maxRows,
       columns: event.props.bodyColumns,
     });
-    return model ? Band($.ui.resolve(event), model) : next(event);
+    const { details } = watch;
+    return model
+      ? Band($.ui.resolve(event), model, () => void togglePane($, details).catch(logFailure($)))
+      : next(event);
+  });
+
+  on("ui.render", { component: "Pane", surface: "terminal" }, async ($, event, next) => {
+    if (event.requestId !== PANE_ID || !watch) return next(event);
+    const { repo, poller, details } = watch;
+    now = await $.clock.now();
+    const runs = poller.fetched();
+    details.keepOnly(new Set((runs ?? []).map((run) => run.databaseId)));
+    const model = paneModel({
+      repo,
+      runs,
+      staleSince: poller.staleSince(),
+      now,
+      columns: event.props.bodyColumns,
+      details: details.of,
+    });
+    return Pane($.ui.resolve(event), model, () => void $.ui.close({ id: PANE_ID }).catch(logFailure($)));
   });
 };

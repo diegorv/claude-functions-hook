@@ -168,3 +168,28 @@ export function transitions(seen: ReadonlySet<number>, runs: Run[]): Transitions
   }
   return { seen: nextSeen, started, finished };
 }
+
+// A job of a run, as `gh run view --json jobs` lists it.
+export type Job = {
+  databaseId: number;
+  name: string;
+  conclusion: string | null;
+  steps: { name: string; conclusion: string | null }[];
+  url?: string; // the job's page; built from the run's when gh leaves it out
+};
+
+export type JobFailure = { job: string; step: string | null; url: string };
+
+const FAILED_JOB = new Set(["failure", "timed_out", "startup_failure"]);
+
+// The jobs that failed, each with the first step that did (null when no step
+// failed, as when a job timed out between steps), linking to the job's page.
+export function jobFailures(run: Run, jobs: Job[]): JobFailure[] {
+  return jobs
+    .filter((job) => FAILED_JOB.has(job.conclusion ?? ""))
+    .map((job) => ({
+      job: job.name,
+      step: job.steps.find((step) => FAILED_JOB.has(step.conclusion ?? ""))?.name ?? null,
+      url: job.url || `${run.url}/job/${job.databaseId}`,
+    }));
+}

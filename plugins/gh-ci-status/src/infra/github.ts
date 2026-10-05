@@ -1,6 +1,6 @@
 // GitHub client on top of the `gh` CLI. Takes the function that runs processes
 // instead of `$`, so the hook passes `$.process.run` and tests pass a fake.
-import type { Pr, Run } from "../core/workflow-run.ts";
+import type { Job, Pr, Run } from "../core/workflow-run.ts";
 import { cut } from "../utils/text.ts";
 
 export type ProcessResult = { exitCode: number; stdout: string; stderr: string };
@@ -17,6 +17,7 @@ type GitHubClient = {
   repoName: () => Promise<string>;
   listRuns: () => Promise<Run[]>;
   listPrs: () => Promise<Pr[]>;
+  runJobs: (runId: number) => Promise<Job[]>;
 };
 
 export function createGitHubClient(
@@ -46,5 +47,6 @@ export function createGitHubClient(
     listRuns: () => runGhJson<Run[]>(["run", "list", "--limit", String(limits.runs), "--json", RUN_FIELDS]),
     listPrs: () =>
       runGhJson<Pr[]>(["pr", "list", "--state", "all", "--limit", String(limits.prs), "--json", PR_FIELDS]),
+    runJobs: async (runId) => (await runGhJson<{ jobs: Job[] }>(["run", "view", String(runId), "--json", "jobs"])).jobs,
   };
 }

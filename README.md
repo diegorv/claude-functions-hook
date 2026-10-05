@@ -45,6 +45,10 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   skipped run shows only on the band. A finished run stays for 5 minutes;
   one that failed, timed out or needs you stays until a newer run of the
   same workflow, branch and trigger shows up, for 30 minutes at most.
+- `details` on the band's header opens a pane with every run of the last
+  list, and under each failed one its failed jobs and steps, each linking to
+  the job: ctrl+x tab to focus the band, then `d`; `d` or Esc closes it. A
+  mouse click reaches it only in fullscreen.
 
 ## Use
 
