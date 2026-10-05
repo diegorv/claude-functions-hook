@@ -1,9 +1,8 @@
 # claude-function-hooks
 
-Function hooks for Claude Code, packaged as a plugin marketplace. Function
-hooks are early access: TypeScript modules that run inside the session,
-behind the `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` flag. The API may change
-between releases.
+Claude Code mods, packaged as a plugin marketplace. A mod is a plugin whose
+hooks module (TypeScript, here) runs inside the session. Mods need Claude Code
+2.1.287 or later and are on by default.
 
 | Plugin | What it does |
 | --- | --- |
@@ -44,18 +43,29 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 ## Use
 
 ```bash
-# a folder of plugins needs Claude Code 2.1.265 or later
-CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1 claude --plugin-dir /path/to/claude-function-hooks/plugins
+# mods need Claude Code 2.1.287 or later
+claude --plugin-dir /path/to/claude-function-hooks/plugins
 ```
 
-Or install them from the marketplace, in a session started with the same
-flag:
+The old `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` flag is ignored; remove it.
+
+Or install them from the marketplace:
 
 ```
 /plugin marketplace add diegorv/claude-functions-hook
 /plugin install gh-ci-status@claude-function-hooks
 /plugin install time@claude-function-hooks
 ```
+
+Tested with Claude Code 2.1.289; the API may still change between releases.
+`/plugin` names the mods the session loaded, in a line such as
+`1 mod active · time`.
+
+To turn one off, disable its plugin in the Installed tab of `/plugin`. To turn
+off every installed mod, start the session with `--safe-mode`, which also
+disables your other customizations, or, for every session, set
+`"disableAllHooks": true` in `~/.claude/settings.json`, which also stops your
+settings hooks and custom status line.
 
 Edits to a hook module reload without restarting the session.
 
