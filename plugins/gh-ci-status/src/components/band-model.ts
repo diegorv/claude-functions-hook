@@ -10,7 +10,7 @@ export type BandInput = {
   rows: Run[];
   waitingSince: number | null; // a recent push with no run yet, or null
   now: number;
-  maxRows: number;
+  maxRows: number; // rows the band may take, every line of it included
 };
 
 // One text cell: a link when `href` is set, plain text otherwise. `pad` is the
@@ -34,6 +34,7 @@ export type BandModel = {
   hiddenCount: number;
 };
 
+const MAX_ROWS = 6; // runs shown at most; the rest go in the "… and N more" line
 const WORKFLOW_MAX = 20;
 const TITLE_MAX = 60;
 
@@ -50,7 +51,12 @@ export function bandModel(input: BandInput): BandModel | null {
     input.waitingSince !== null && !input.rows.some(inFlight) ? elapsed(input.now - input.waitingSince) : null;
   if (input.rows.length === 0 && waitingFor === null) return null;
 
-  const shown = input.rows.slice(0, input.maxRows);
+  // The runs get what the header and the waiting line leave; when they don't
+  // all fit, one row of that goes to the "more" line. From 3 rows up the tree
+  // never grows past maxRows; below that it can, and the engine scrolls it.
+  const room = input.maxRows - 1 - (waitingFor !== null ? 1 : 0);
+  const fits = input.rows.length <= Math.min(MAX_ROWS, room);
+  const shown = input.rows.slice(0, fits ? input.rows.length : Math.max(0, Math.min(MAX_ROWS, room - 1)));
   const refs = shown.map((run) => cut(branchLabel(run), REF_MAX));
   const workflows = shown.map((run) => cut(workflowLabel(run), WORKFLOW_MAX));
   const refWidth = Math.max(0, ...refs.map((ref) => ref.length));

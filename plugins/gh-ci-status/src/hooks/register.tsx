@@ -10,7 +10,6 @@ import { triggersWorkflow } from "../core/trigger-commands.ts";
 import { Band } from "../components/band.tsx";
 import { bandModel } from "../components/band-model.ts";
 
-const MAX_ROWS = 6;
 const TICK_MS = 1000; // the band's clocks move between polls
 
 export const register: Register = (on) => {
@@ -71,7 +70,7 @@ export const register: Register = (on) => {
       rows: poller.rows(),
       waitingSince: poller.waitingSince(),
       now,
-      maxRows: Math.max(1, Math.min(MAX_ROWS, event.props.maxRows - 3)), // header, waiting line, "more" line
+      maxRows: event.props.maxRows,
     });
     return model ? Band($.ui.resolve(event), model) : next(event);
   });

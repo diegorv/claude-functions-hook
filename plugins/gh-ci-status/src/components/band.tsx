@@ -1,8 +1,8 @@
 // Maps the band's view model to elements. No decisions here: see band-model.ts.
 //
-// JSX rules of this runtime: a .map() array only inside a Fragment, and a bare
-// Fragment lays out as a row Box, so it lives inside a column Box; Box takes
-// no key; an empty conditional branch draws an empty Text.
+// A .map() array goes inside a Fragment, and a bare Fragment lays out as a row
+// Box, so it lives inside a column Box. A line that is not drawn is a null
+// child, which the element factory drops (RenderChildren), so it takes no row.
 import type { Elements as EngineElements, RenderChildren } from "claude-code";
 import type { BandModel, Cell } from "./band-model.ts";
 
@@ -10,7 +10,6 @@ import type { BandModel, Cell } from "./band-model.ts";
 type Elements = Pick<EngineElements["terminal"], "Box" | "Text" | "Link">;
 
 export function Band({ Box, Text, Link }: Elements, model: BandModel) {
-  const blank = () => <Text>{""}</Text>;
   const column = (child: RenderChildren) => <Box flexShrink={0}>{child}</Box>;
   const anchor = (cell: Cell) =>
     cell.href ? <Link href={cell.href}>{cell.text}</Link> : <Text dimColor>{cell.text}</Text>;
@@ -24,7 +23,7 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
         {anchor(model.actions)}
         {model.counts ? ` · ${model.counts}` : ""}
       </Text>
-      {model.waitingFor !== null ? <Text dimColor>{`◌ waiting for a run   ${model.waitingFor}`}</Text> : blank()}
+      {model.waitingFor !== null ? <Text dimColor>{`◌ waiting for a run   ${model.waitingFor}`}</Text> : null}
       <Box flexDirection="column">
         <>
           {model.rows.map((row) => (
@@ -49,14 +48,12 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
                 <Text dimColor wrap="truncate-end">
                   {row.title.href ? anchor(row.title) : row.title.text}
                 </Text>
-              ) : (
-                blank()
-              )}
+              ) : null}
             </Box>
           ))}
         </>
       </Box>
-      {model.hiddenCount > 0 ? <Text dimColor>{`  … and ${model.hiddenCount} more`}</Text> : blank()}
+      {model.hiddenCount > 0 ? <Text dimColor>{`  … and ${model.hiddenCount} more`}</Text> : null}
     </Box>
   );
 }
