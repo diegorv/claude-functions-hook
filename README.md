@@ -25,12 +25,11 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 ```
 
 - Finds the repo the way `gh` does (`gh repo view`, the default remote), so
-  `gh` must be on your `PATH` and logged in. Without a GitHub remote it logs
-  one line and stays quiet. The check runs once, at session start, so a
-  failure there, no network or an expired token, keeps it quiet for the
-  whole session: after `gh auth login`, or once the network is back,
-  restart the session (under `--plugin-dir`, editing any file of the plugin
-  reloads it).
+  `gh` must be on your `PATH` and logged in. Without a GitHub remote it
+  stays quiet. The check runs at session start; if it fails there, no
+  network or an expired token, it runs again at the next command that wakes
+  the band (below), so after `gh auth login`, or once the network is back,
+  a push is enough. Each failure goes to the debug log (`claude --debug`).
 - Polls `gh run list` every 60 s, and every 15 s while a run is in flight or
   for 6 minutes after a push. A `git push`, `git subtree push`, `gh pr merge`,
   `gh workflow run` or `gh run rerun` in Bash wakes it.
@@ -42,7 +41,7 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   run that failed or needs you, one for those that passed; a cancelled or
   skipped run shows only on the band. A finished run stays for 5 minutes;
   one that failed, timed out or needs you stays until a newer run of the
-  same workflow on that branch shows up, for 30 minutes at most.
+  same workflow, branch and trigger shows up, for 30 minutes at most.
 
 ## Use
 
@@ -119,7 +118,7 @@ plugins/gh-ci-status/
   hooks/hooks.json             points at the entry module
   src/core/                    the run model and the text derived from it, no I/O
   src/utils/                   generic helpers (text)
-  src/app/                     use cases (the poller), dependencies injected
+  src/app/                     use cases (the poller, the start-up), dependencies injected
   src/infra/                   external clients (GitHub through gh)
   src/components/              the band's view model and its JSX
   src/hooks/                   the wiring to the engine

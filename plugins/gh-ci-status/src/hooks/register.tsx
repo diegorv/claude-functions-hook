@@ -1,11 +1,13 @@
 // Wires the pieces to the engine: three hooks, no logic of its own.
 //
 //   session.start        finds the repo through its remote and starts the poller
-//   classic.PostToolUse  a push or merge in Bash wakes the poller
+//   classic.PostToolUse  a push or merge in Bash wakes the poller, or finds the repo again
+//                        when that failed at session start
 //   ui.render            draws the band above the prompt from the poller's state
 import type { Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
 import { createPoller, needsRedraw, type Poller } from "../app/poller.ts";
+import { createStarter, type Starter } from "../app/starter.ts";
 import { triggersWorkflow } from "../core/trigger-commands.ts";
 import { Band } from "../components/band.tsx";
 import { bandModel } from "../components/band-model.ts";
@@ -13,8 +15,12 @@ import { bandModel } from "../components/band-model.ts";
 const TICK_MS = 1000; // the band's clocks move between polls
 
 export const register: Register = (on) => {
-  // Set by session.start; null until then, or when there is no GitHub repo.
+  // Set once the repo is found; null until then, or when there is no GitHub repo.
   let watch: { repo: string; poller: Poller } | null = null;
+  // Set by session.start; finds the repo and starts the watch, again on a push while it is not found.
+  let startWatch: Starter | null = null;
+  // A push or merge seen before the watch started: the poller wakes on it once it does.
+  let pendingWake = false;
   // The poller reads the time synchronously and $.clock.now() is async, so this copy is
   // refreshed before the poller starts, on every tick and on every drawing.
   let now = 0;
@@ -24,9 +30,9 @@ export const register: Register = (on) => {
     const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
 
     // Finding the repo takes a gh call; the session must not wait for it.
-    void github
-      .repoName()
-      .then(async (repo) => {
+    startWatch = createStarter(
+      () => github.repoName(),
+      async (repo) => {
         now = await $.clock.now();
         const poller = createPoller(repo, {
           listRuns: github.listRuns,
@@ -37,8 +43,13 @@ export const register: Register = (on) => {
           toast: (text, timeoutMs) => $.ui.toast(text, timeoutMs ? { timeoutMs } : undefined),
           log: (text) => $.ui.log(text, { to: "debug" }), // the band's header shows the outage
         });
+        // No second poller: what can throw runs before this line, and once `watch` is set a push wakes it.
         watch = { repo, poller };
         poller.start();
+        if (pendingWake) {
+          pendingWake = false;
+          poller.wake();
+        }
         // A timer's callback is synchronous; a refresh that fails is retried on the next tick.
         let lastShown = 0; // rows on the band at the last tick
         $.clock.every(TICK_MS, () => {
@@ -53,15 +64,23 @@ export const register: Register = (on) => {
             () => {},
           );
         });
-      })
-      .catch((error) => $.ui.log(`${error instanceof Error ? error.message : String(error)}; staying quiet`));
+      },
+      (text) => $.ui.log(text, { to: "debug" }),
+    );
+    startWatch();
     return next(event);
   });
 
   // classic.PostToolUse fires after the tool succeeded, so a denied or failed push never gets here.
   on("classic.PostToolUse", { tool_name: "Bash" }, ($, event, next) => {
     const command = (event.tool_input as { command?: unknown }).command;
-    if (watch && typeof command === "string" && triggersWorkflow(command)) watch.poller.wake();
+    if (typeof command === "string" && triggersWorkflow(command)) {
+      if (watch) watch.poller.wake();
+      else {
+        pendingWake = true;
+        startWatch?.(); // the repo was not found at session start: a push is a good moment to look again
+      }
+    }
     return next(event);
   });
 
