@@ -67,3 +67,9 @@ export function paneModel(input: PaneInput): PaneModel {
     })),
   };
 }
+
+// Whether a toggle closes the pane: only when the engine lists it as the one
+// shown and this module drew it since it opened. Right after a reload the
+// engine can still list a pane nothing draws; closing that would close a pane
+// the person cannot see, so the toggle opens it instead.
+export const shouldClose = (listedShown: boolean, drawnHere: boolean): boolean => listedShown && drawnHere;

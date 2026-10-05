@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { paneModel, type PaneInput } from "./pane-model.ts";
+import { paneModel, shouldClose, type PaneInput } from "./pane-model.ts";
 import { run, running, T0 } from "../core/fixtures.ts";
 import type { Details } from "../app/details.ts";
 import { cells } from "../utils/text.ts";
@@ -84,4 +84,11 @@ test("a run waiting for approval points at the run, and asks for no jobs", () =>
     { text: "    waiting for approval: open the run", href: "https://github.com/a/b/actions/runs/5" },
   ]);
   assert.deepEqual(asked, []);
+});
+
+test("shouldClose: only a pane listed as shown that this module drew", () => {
+  assert.equal(shouldClose(true, true), true);
+  assert.equal(shouldClose(true, false), false, "listed after a reload, but nothing draws it: open it");
+  assert.equal(shouldClose(false, true), false, "behind another tab: open it, which raises it");
+  assert.equal(shouldClose(false, false), false);
 });

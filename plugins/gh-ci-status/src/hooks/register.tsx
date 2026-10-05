@@ -1,10 +1,11 @@
-// Wires the pieces to the engine: three hooks, no logic of its own.
+// Wires the pieces to the engine: its hooks, no logic of its own.
 //
 //   session.start        finds the repo through its remote and starts the poller
 //   classic.PostToolUse  a push or merge in Bash wakes the poller, or finds the repo again
 //                        when that failed at session start
 //   ui.render            draws the band above the prompt from the poller's state, and the
 //                        details pane its "details" Button opens
+//   ui.close             notes that the pane is gone, so the next toggle opens it
 //   command.run          /gh-ci opens or closes that pane, band or not
 import type { EngineInterface, Register } from "claude-code";
 import { createGitHubClient } from "../infra/github.ts";
@@ -15,7 +16,7 @@ import { triggersWorkflow } from "../core/trigger-commands.ts";
 import { Band } from "../components/band.tsx";
 import { bandModel } from "../components/band-model.ts";
 import { Pane } from "../components/pane.tsx";
-import { paneModel } from "../components/pane-model.ts";
+import { paneModel, shouldClose } from "../components/pane-model.ts";
 
 const TICK_MS = 1000; // the band's clocks move between polls
 const PANE_ID = "ci";
@@ -29,14 +30,17 @@ function commandReply(toggled: Toggled): string | undefined {
   return undefined;
 }
 
-// Opens the details pane, or closes it when it is the one shown: the engine's
-// record of the plugin's panes says which, so a reload or a close by Esc stays
-// in step. Open but behind another tab, it is opened again, which raises it.
-async function togglePane($: EngineInterface, details: DetailsCache): Promise<Toggled> {
-  if ((await $.ui.panes()).some((pane) => pane.id === PANE_ID && pane.isShown)) {
+// Opens the details pane, or closes it when it is the one shown and this module
+// drew it (shouldClose). Open but behind another tab, or listed after a reload
+// with nothing drawing it, it is opened again, which raises it.
+async function togglePane($: EngineInterface, details: DetailsCache, drawnHere: boolean): Promise<Toggled> {
+  const listed = (await $.ui.panes()).find((pane) => pane.id === PANE_ID);
+  if (shouldClose(listed?.isShown === true, drawnHere)) {
     await $.ui.close({ id: PANE_ID });
     return { kind: "closed" };
   }
+  // Listed but not drawn here is what a reload leaves, and opening that again does not draw it: close it first.
+  if (listed && !drawnHere) await $.ui.close({ id: PANE_ID });
   details.retryFailed();
   // Asked for (a press or a command), so the surface places it at any width; toasts stay on, it is not a dialog.
   const opened = await $.ui.open({ id: PANE_ID, title: "CI", focus: true, closeOnEscape: true });
@@ -57,6 +61,8 @@ export const register: Register = (on) => {
   // The poller reads the time synchronously and $.clock.now() is async, so this copy is
   // refreshed before the poller starts, on every tick and on every drawing.
   let now = 0;
+  // This module drew the pane since it last opened; cleared when it closes, false after a reload.
+  let paneDrawn = false;
 
   on("session.start", ($, event, next) => {
     if (!event.isInteractive) return next(event); // -p and the SDK draw nowhere
@@ -137,7 +143,7 @@ export const register: Register = (on) => {
     });
     const { details } = watch;
     return model
-      ? Band($.ui.resolve(event), model, () => void togglePane($, details).catch(logFailure($)))
+      ? Band($.ui.resolve(event), model, () => void togglePane($, details, paneDrawn).catch(logFailure($)))
       : next(event);
   });
 
@@ -147,7 +153,7 @@ export const register: Register = (on) => {
       startWatch?.();
       return { text: "No GitHub repo found yet (gh repo view); looking again now. Run /gh-ci again in a moment." };
     }
-    const text = commandReply(await togglePane($, watch.details));
+    const text = commandReply(await togglePane($, watch.details, paneDrawn));
     return text ? { text } : {};
   });
 
@@ -165,6 +171,14 @@ export const register: Register = (on) => {
       columns: event.props.bodyColumns,
       details: details.of,
     });
+    paneDrawn = true;
     return Pane($.ui.resolve(event), model, () => void $.ui.close({ id: PANE_ID }).catch(logFailure($)));
+  });
+
+  // The person's close (mark, Esc) or ours ends the drawing; the close goes on. An unload runs no
+  // hook of ours, and the reloaded module starts with the flag false.
+  on("ui.close", { id: PANE_ID }, ($, event, next) => {
+    paneDrawn = false;
+    return next(event);
   });
 };
