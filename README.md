@@ -29,7 +29,8 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   one line and stays quiet. The check runs once, at session start, so a
   failure there, no network or an expired token, keeps it quiet for the
   whole session: after `gh auth login`, or once the network is back,
-  restart the session or edit a hook module to reload the plugin.
+  restart the session (under `--plugin-dir`, editing any file of the plugin
+  reloads it).
 - Polls `gh run list` every 60 s, and every 15 s while a run is in flight or
   for 6 minutes after a push. A `git push`, `git subtree push`, `gh pr merge`,
   `gh workflow run` or `gh run rerun` in Bash wakes it.
@@ -67,7 +68,8 @@ disables your other customizations, or, for every session, set
 `"disableAllHooks": true` in `~/.claude/settings.json`, which also stops your
 settings hooks and custom status line.
 
-Edits to a hook module reload without restarting the session.
+Under `--plugin-dir`, edits to a plugin's files reload it without restarting
+the session.
 
 ## Develop
 
