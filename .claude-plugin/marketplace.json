@@ -1,7 +1,7 @@
 {
   "name": "claude-function-hooks",
   "owner": { "name": "Diego R. v." },
-  "description": "Diego's function hooks for Claude Code",
+  "description": "Diego's mods for Claude Code",
   "plugins": [
     { "name": "time", "source": "./plugins/time", "description": "The time you sent each message, drawn above it" },
     {
