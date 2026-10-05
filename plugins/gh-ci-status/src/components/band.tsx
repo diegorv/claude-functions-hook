@@ -16,14 +16,16 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
 
   return (
     <Box flexDirection="column">
-      <Text dimColor>
+      <Text dimColor wrap="truncate-end">
         {"⚙ "}
         {anchor(model.repo)}
         {" · "}
         {anchor(model.actions)}
         {model.counts ? ` · ${model.counts}` : ""}
       </Text>
-      {model.waitingFor !== null ? <Text dimColor>{`◌ waiting for a run   ${model.waitingFor}`}</Text> : null}
+      {model.waitingFor !== null ? (
+        <Text dimColor wrap="truncate-end">{`◌ waiting for a run   ${model.waitingFor}`}</Text>
+      ) : null}
       <Box flexDirection="column">
         <>
           {model.rows.map((row) => (
@@ -35,14 +37,22 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
                 </Text>,
               )}
               {column(
-                <Text color={row.phase.color} dimColor={row.phase.dim}>{`${row.phase.dot} ${row.phase.label}`}</Text>,
-              )}
-              {column(
-                <Text dimColor>
-                  {anchor(row.workflow)}
-                  {row.workflow.pad}
+                <Text color={row.phase.color} dimColor={row.phase.dim}>
+                  {row.phase.href ? (
+                    <Link href={row.phase.href}>{`${row.phase.dot} ${row.phase.label}`}</Link>
+                  ) : (
+                    `${row.phase.dot} ${row.phase.label}`
+                  )}
                 </Text>,
               )}
+              {row.workflow
+                ? column(
+                    <Text dimColor>
+                      {anchor(row.workflow)}
+                      {row.workflow.pad}
+                    </Text>,
+                  )
+                : null}
               {column(<Text>{row.clock}</Text>)}
               {row.title ? (
                 <Text dimColor wrap="truncate-end">
@@ -53,7 +63,7 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
           ))}
         </>
       </Box>
-      {model.hiddenCount > 0 ? <Text dimColor>{`  … and ${model.hiddenCount} more`}</Text> : null}
+      {model.hiddenCount > 0 ? <Text dimColor wrap="truncate-end">{`  … and ${model.hiddenCount} more`}</Text> : null}
     </Box>
   );
 }

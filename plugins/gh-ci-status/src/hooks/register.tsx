@@ -71,6 +71,7 @@ export const register: Register = (on) => {
       waitingSince: poller.waitingSince(),
       now,
       maxRows: event.props.maxRows,
+      columns: event.props.bodyColumns,
     });
     return model ? Band($.ui.resolve(event), model) : next(event);
   });

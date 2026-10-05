@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cut, elapsed } from "./text.ts";
+import { cells, cut, elapsed } from "./text.ts";
 
 test("elapsed: fixed width, zero padded", () => {
   assert.equal(elapsed(-5), "0m00s");
@@ -16,8 +16,19 @@ test("cut: first line, with an ellipsis", () => {
   assert.equal(cut("abcdefghij", 5), "abcd…");
 });
 
-test("cut: counts characters, not code units", () => {
-  assert.equal(cut("🚀🚀🚀🚀🚀", 4), "🚀🚀🚀…");
+test("cells: wide characters take two, combining marks none, ambiguous glyphs one", () => {
+  assert.equal(cells("abc"), 3);
+  assert.equal(cells("🚀"), 2);
+  assert.equal(cells("修正"), 4);
+  assert.equal(cells("e\u0301"), 1);
+  assert.equal(cells("◐ ✗ ⊘ ● ○ ·"), 11);
+  assert.equal(cells("✔️"), 2, "a base and VS16");
+});
+
+test("cut: counts terminal cells, not code units", () => {
+  assert.equal(cut("🚀🚀🚀🚀🚀", 6), "🚀🚀…");
+  assert.equal(cut("修正ログイン", 7), "修正ロ…");
+  assert.equal(cut("🚀🚀", 4), "🚀🚀");
 });
 
 test("cut: control characters are dropped", () => {

@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bandModel, type BandInput, type BandModel } from "./band-model.ts";
+import { bandModel, columnWidths, type BandInput, type BandModel } from "./band-model.ts";
 import { at, run, running, T0 } from "../core/fixtures.ts";
 import { LABEL_WIDTH } from "../core/workflow-run.ts";
+import { cells } from "../utils/text.ts";
 
 const input = (overrides: Partial<BandInput> = {}): BandInput => ({
   repo: "a/b",
@@ -10,6 +11,7 @@ const input = (overrides: Partial<BandInput> = {}): BandInput => ({
   waitingSince: null,
   now: T0 + 60_000,
   maxRows: 6,
+  columns: 120,
   ...overrides,
 });
 
@@ -34,7 +36,7 @@ test("a row with a PR: #N links to the PR, the title is plain text", () => {
   const [row] = model.rows;
   assert.deepEqual(row.ref, { text: "#167", href: "https://github.com/a/b/pull/167", pad: "" });
   assert.deepEqual(row.title, { text: "Fix login", href: null, pad: "" });
-  assert.equal(row.workflow.href, "https://github.com/a/b/actions/runs/1");
+  assert.equal(row.workflow?.href, "https://github.com/a/b/actions/runs/1");
   assert.equal(row.clock, "1m00s");
   assert.equal(row.phase.label, "Running  ");
 });
@@ -58,14 +60,70 @@ test("columns pad to the widest row, outside the link", () => {
   const [short, long] = bandModel(input({ rows }))!.rows;
   assert.equal(short.ref.pad, " ".repeat("feature/long-name".length - "main".length));
   assert.equal(long.ref.pad, "");
-  assert.equal(short.workflow.pad, " ".repeat("Privacy".length - "CI".length));
+  assert.equal(short.workflow?.pad, " ".repeat("Privacy".length - "CI".length));
 });
 
-test("long refs and titles are cut", () => {
-  const rows = [run({ headBranch: "x".repeat(40), displayTitle: "y".repeat(80) })];
-  const model = bandModel(input({ rows }))!;
-  assert.equal(model.rows[0].ref.text.length, 24);
-  assert.equal(model.rows[0].title?.text.length, 60);
+test("long refs are cut to 24 cells; the title takes what the row has left", () => {
+  const rows = [run({ headBranch: "x".repeat(40), displayTitle: "y".repeat(200) })];
+  const [row] = bandModel(input({ rows }))!.rows;
+  assert.equal(row.ref.text.length, 24);
+  assert.equal(row.title?.text.length, 120 - (24 + 2 + 2 + LABEL_WIDTH + 2 + 2 + 2 + 5 + 2)); // ref, phase, "CI", clock, gaps
+});
+
+test("columnWidths: the title goes first, then the workflow, then the ref is cut", () => {
+  const needed = { ref: 4, workflow: 7, clock: 5, title: 20 };
+  // ref 4 + phase 11 + clock 5 + two gaps = 24; the workflow takes 9 more, the title 22.
+  assert.deepEqual(columnWidths(needed, 120), needed);
+  assert.deepEqual(columnWidths(needed, 45), { ...needed, title: 10 }, "a title cut to its floor");
+  assert.deepEqual(columnWidths(needed, 44), { ...needed, title: 0 }, "under its floor the title goes");
+  assert.deepEqual(columnWidths(needed, 33), { ...needed, title: 0 });
+  assert.deepEqual(columnWidths(needed, 30), { ...needed, workflow: 0, title: 0 }, "then the workflow");
+  assert.deepEqual(columnWidths({ ...needed, ref: 20 }, 30), { ref: 10, workflow: 0, clock: 5, title: 0 });
+  assert.equal(columnWidths({ ...needed, ref: 20 }, 10).ref, 6, "the ref stops at its floor");
+});
+
+test("columnWidths: a short workflow or title shows whole when it fits", () => {
+  assert.equal(columnWidths({ ref: 4, workflow: 2, clock: 5, title: 3 }, 24 + 4 + 5).workflow, 2);
+  assert.equal(columnWidths({ ref: 4, workflow: 2, clock: 5, title: 3 }, 24 + 4 + 5).title, 3);
+});
+
+const rowCells = (row: BandModel["rows"][number]) =>
+  cells(row.ref.text + row.ref.pad) +
+  2 +
+  cells(`${row.phase.dot} ${row.phase.label}`) +
+  (row.workflow ? 2 + cells(row.workflow.text + row.workflow.pad) : 0) +
+  2 +
+  cells(row.clock) +
+  (row.title ? 2 + cells(row.title.text) : 0);
+
+test("every row fits the band's width, and the status keeps its label", () => {
+  const rows = [
+    running({ headBranch: "refs/pull/167/head", workflowName: "🚀 Deploy production", displayTitle: "修正: ログイン" }),
+    run({ databaseId: 2, headBranch: "dependabot/npm_and_yarn/x-1.2.3", conclusion: "timed_out" }),
+  ];
+  for (let columns = 30; columns <= 140; columns++) {
+    for (const row of bandModel(input({ rows, columns }))!.rows) {
+      assert.ok(rowCells(row) <= columns, `${rowCells(row)} cells in ${columns}`);
+      assert.equal(row.phase.label.trim().length > 0, true);
+      assert.equal(row.phase.label.length, LABEL_WIDTH);
+    }
+  }
+});
+
+test("a row too narrow for its workflow links its status to the run instead", () => {
+  const [wide] = bandModel(input({ rows: [run()] }))!.rows;
+  assert.equal(wide.phase.href, null);
+  const [narrow] = bandModel(input({ rows: [run()], columns: 24 }))!.rows; // ref, status and clock only
+  assert.equal(narrow.workflow, null);
+  assert.equal(narrow.title, null);
+  assert.equal(narrow.phase.href, "https://github.com/a/b/actions/runs/1");
+});
+
+test("the clock column pads to the widest clock shown", () => {
+  const rows = [running(), run({ databaseId: 2, updatedAt: at(725_000) })];
+  const [short, long] = bandModel(input({ rows }))!.rows;
+  assert.equal(short.clock, " 1m00s");
+  assert.equal(long.clock, "12m05s");
 });
 
 const runs = (count: number) => Array.from({ length: count }, (_, index) => run({ databaseId: index + 1 }));
@@ -115,7 +173,7 @@ test("rows: below 3 rows the waiting line can push the band one row past maxRows
 });
 
 test("a run without a workflow name still gets a label", () => {
-  assert.equal(bandModel(input({ rows: [run({ workflowName: "" })] }))!.rows[0].workflow.text, "workflow");
+  assert.equal(bandModel(input({ rows: [run({ workflowName: "" })] }))!.rows[0].workflow?.text, "workflow");
 });
 
 test("an unknown conclusion still fits the status column", () => {
