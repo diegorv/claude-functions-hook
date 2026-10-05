@@ -16,18 +16,23 @@ const TICK_MS = 1000; // the band's clocks move between polls
 export const register: Register = (on) => {
   // Set by session.start; null until then, or when there is no GitHub repo.
   let watch: { repo: string; poller: Poller } | null = null;
+  // The poller reads the time synchronously and $.clock.now() is async, so this copy is
+  // refreshed before the poller starts, on every tick and on every drawing.
+  let now = 0;
 
   on("session.start", ($, event, next) => {
     if (!event.isInteractive) return next(event); // -p and the SDK draw nowhere
     const github = createGitHubClient((argv, init) => $.process.run(argv, init), event.cwd);
 
     // Finding the repo takes a gh call; the session must not wait for it.
-    void github.repoName().then(
-      (repo) => {
+    void github
+      .repoName()
+      .then(async (repo) => {
+        now = await $.clock.now();
         const poller = createPoller(repo, {
           listRuns: github.listRuns,
           listPrs: github.listPrs,
-          now: () => $.clock.now(),
+          now: () => now,
           after: (ms, callback) => $.clock.after(ms, callback),
           onChange: () => $.ui.invalidate("ui.render"),
           toast: (text, timeoutMs) => $.ui.toast(text, timeoutMs ? { timeoutMs } : undefined),
@@ -35,12 +40,18 @@ export const register: Register = (on) => {
         });
         watch = { repo, poller };
         poller.start();
+        // A timer's callback is synchronous; a refresh that fails is retried on the next tick.
         $.clock.every(TICK_MS, () => {
-          if (poller.live()) $.ui.invalidate("ui.render");
+          void $.clock.now().then(
+            (time) => {
+              now = time;
+              if (poller.live()) $.ui.invalidate("ui.render");
+            },
+            () => {},
+          );
         });
-      },
-      (error) => $.ui.log(`${error instanceof Error ? error.message : String(error)}; staying quiet`),
-    );
+      })
+      .catch((error) => $.ui.log(`${error instanceof Error ? error.message : String(error)}; staying quiet`));
     return next(event);
   });
 
@@ -54,11 +65,12 @@ export const register: Register = (on) => {
   on("ui.render", { component: "AbovePrompt", surface: "terminal" }, async ($, event, next) => {
     if (event.props.hasSurvey || !watch) return next(event);
     const { repo, poller } = watch;
+    now = await $.clock.now();
     const model = bandModel({
       repo,
       rows: poller.rows(),
       waitingSince: poller.waitingSince(),
-      now: $.clock.now(),
+      now,
       maxRows: Math.max(1, Math.min(MAX_ROWS, event.props.maxRows - 3)), // header, waiting line, "more" line
     });
     return model ? Band($.ui.resolve(event), model) : next(event);
