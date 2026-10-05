@@ -1,10 +1,10 @@
 // Text derived from a workflow run: what each band column and toast says.
-import { inFlight, needsAttention, phase, prNumber, type Run } from "./workflow-run.ts";
+import { attemptStartedAt, inFlight, needsAttention, phase, prNumber, type Run } from "./workflow-run.ts";
 import { cut, elapsed } from "../utils/text.ts";
 
 // The time column: how long the run has been going, or how long it took.
 export function clock(run: Run, now: number): string {
-  const startedAt = Date.parse(run.startedAt);
+  const startedAt = attemptStartedAt(run);
   const endedAt = inFlight(run) ? now : Date.parse(run.updatedAt);
   return elapsed(endedAt - startedAt);
 }

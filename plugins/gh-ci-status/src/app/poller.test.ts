@@ -151,6 +151,37 @@ test("a run created just before the push still clears the waiting (clock skew)",
   assert.equal(poller.waitingSince(), null, "GitHub's clock runs a little behind the local one");
 });
 
+test("a rerun clears the waiting: same id, old createdAt, a new startedAt", async () => {
+  const old = run({ databaseId: 7, createdAt: at(-3_600_000), startedAt: at(-3_600_000), updatedAt: at(-3_500_000) });
+  const engine = fakeEngine([
+    () => Promise.resolve([old]),
+    () => Promise.resolve([running({ ...old, startedAt: at(2_000), updatedAt: at(2_000) })]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  poller.wake(); // `gh run rerun` at T0
+  await engine.settle();
+  assert.equal(poller.waitingSince(), null, "the rerun is the run the command was waiting for");
+});
+
+test("a rerun gives a started toast", async () => {
+  const old = run({ databaseId: 7, createdAt: at(-3_600_000), startedAt: at(-3_600_000), updatedAt: at(-3_500_000) });
+  const engine = fakeEngine([
+    () => Promise.resolve([old]),
+    () =>
+      Promise.resolve([
+        { ...old, status: "in_progress", conclusion: null, startedAt: at(2_000), updatedAt: at(2_000) },
+      ]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  poller.wake();
+  await engine.settle();
+  assert.deepEqual(engine.toasts, ["⚙ a/b: CI started (main)"]);
+});
+
 test("a run that started before the push keeps the waiting", async () => {
   const engine = fakeEngine([
     () => Promise.resolve([]),

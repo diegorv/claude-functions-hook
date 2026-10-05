@@ -45,6 +45,11 @@ export const LABEL_WIDTH = Math.max(...Object.values(LABELS).map((label) => labe
 
 export const inFlight = (run: Run): boolean => run.status !== "completed";
 
+// When the run's latest attempt began: startedAt, which a rerun moves while
+// createdAt stays; createdAt when startedAt is missing or unparsable.
+export const attemptStartedAt = (run: Run): number =>
+  Math.max(Date.parse(run.createdAt) || 0, Date.parse(run.startedAt) || 0);
+
 // Runs a person starts from the terminal stay on the band; cron, issue bots and the like do not.
 const PERSON_EVENTS = new Set([
   "push",
@@ -129,6 +134,7 @@ export function visible(runs: Run[], now: number, holds: Holds): Run[] {
         other.workflowDatabaseId === run.workflowDatabaseId &&
         other.headBranch === run.headBranch &&
         other.event === run.event &&
+        // createdAt, not the attempt: a rerun of an older run tests older code, so it does not end a later failure
         Date.parse(other.createdAt) > Date.parse(run.createdAt),
     );
   return runs.filter((run) => {

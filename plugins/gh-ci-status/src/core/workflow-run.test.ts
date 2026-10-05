@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  attemptStartedAt,
   byAttention,
   inFlight,
   LABEL_WIDTH,
@@ -171,4 +172,26 @@ test("transitions: started, finished, and the next set", () => {
   );
   assert.deepEqual([...changes.seen], [2, 3]);
   assert.deepEqual([...seen], [1, 2], "does not mutate the old set");
+});
+
+test("attemptStartedAt: a rerun's startedAt; createdAt when startedAt is missing", () => {
+  assert.equal(attemptStartedAt(run({ createdAt: at(0), startedAt: at(600_000) })), T0 + 600_000);
+  assert.equal(attemptStartedAt(run({ createdAt: at(0), startedAt: "" })), T0);
+  assert.equal(attemptStartedAt(run({ createdAt: at(0), startedAt: "0001-01-01T00:00:00Z" })), T0);
+});
+
+test("visible: a rerun of an older run does not end a later failure", () => {
+  const holds = { holdMs: 5 * 60_000, failedHoldMs: 30 * 60_000 };
+  const failed = run({
+    databaseId: 2,
+    conclusion: "failure",
+    createdAt: at(0),
+    startedAt: at(0),
+    updatedAt: at(60_000),
+  });
+  const rerunOfOlder = running({ databaseId: 1, createdAt: at(-600_000), startedAt: at(120_000) });
+  assert.deepEqual(
+    visible([failed, rerunOfOlder], T0 + 180_000, holds).map((candidate) => candidate.databaseId),
+    [2, 1],
+  );
 });

@@ -1,6 +1,7 @@
 // The poll loop: when to ask, what to keep, when to notify. Everything that
 // touches the engine comes in through `deps`, so tests run it on a fake clock.
 import {
+  attemptStartedAt,
   inFlight,
   startedByPerson,
   transitions,
@@ -92,7 +93,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     const changes = transitions(seen, runs);
     seen = changes.seen;
     const since = pushedAt; // narrowed copy: TS resets `let` narrowing inside the callback
-    if (since !== null && runs.some((run) => Date.parse(run.createdAt) >= since - CLOCK_SKEW_MS)) pushedAt = null; // the push's run is here
+    if (since !== null && runs.some((run) => attemptStartedAt(run) >= since - CLOCK_SKEW_MS)) pushedAt = null; // the push's run, or rerun, is here
     announce(changes.started, changes.finished);
     rows = visible(runs, deps.now(), config);
     return live();
