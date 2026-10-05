@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { branchLabel, clock, counts, linkOf, titleOf } from "./run-labels.ts";
+import { branchLabel, clock, counts, finishedToasts, linkOf, startedToast, titleOf } from "./run-labels.ts";
 import { at, run, running, T0 } from "./fixtures.ts";
 
 test("clock: in flight counts up to now; finished shows the duration", () => {
@@ -33,4 +33,35 @@ test("titleOf: empty when it only repeats the #N", () => {
 test("counts: non-zero counts only", () => {
   assert.equal(counts([]), "");
   assert.equal(counts([running(), running({ databaseId: 2 }), run({ databaseId: 3 })]), "2 running · 1 finished");
+});
+
+test("startedToast: names the workflow and #N, or the branch without a PR", () => {
+  assert.equal(startedToast("a/b", running({ pr: 12 })), "⚙ a/b: CI started (#12)");
+  assert.equal(startedToast("a/b", running()), "⚙ a/b: CI started (main)");
+});
+
+test("finishedToasts: a failure names the workflow, the phase, the clock and #N, for 10 s", () => {
+  assert.deepEqual(finishedToasts("a/b", [run({ conclusion: "timed_out", pr: 7 })], T0), [
+    { text: "⚙ a/b: CI timed out after 1m00s (#7)", timeoutMs: 10_000 },
+  ]);
+});
+
+test("finishedToasts: action_required asks, with no clock", () => {
+  assert.deepEqual(finishedToasts("a/b", [run({ conclusion: "action_required", pr: 123 })], T0), [
+    { text: "⚙ a/b: CI needs you (#123)", timeoutMs: 10_000 },
+  ]);
+});
+
+test("finishedToasts: one success is named; several are counted; the default timeout", () => {
+  assert.deepEqual(finishedToasts("a/b", [run()], T0), [{ text: "⚙ a/b: CI passed after 1m00s (main)" }]);
+  assert.deepEqual(finishedToasts("a/b", [run(), run({ databaseId: 2, workflowName: "Lint" })], T0), [
+    { text: "⚙ a/b: 2 runs passed" },
+  ]);
+});
+
+test("finishedToasts: cancelled, skipped and neutral say nothing", () => {
+  const quiet = ["cancelled", "skipped", "neutral"].map((conclusion, index) =>
+    run({ databaseId: index + 1, conclusion }),
+  );
+  assert.deepEqual(finishedToasts("a/b", quiet, T0), []);
 });

@@ -12,6 +12,7 @@ function fakeEngine(responses: (() => Promise<Run[]>)[]) {
   const timers: { at: number; callback: () => void; cancelled: boolean }[] = [];
   let responseIndex = 0;
   const toasts: string[] = [];
+  const timeouts: (number | undefined)[] = [];
   const logs: string[] = [];
   let changeCount = 0;
 
@@ -25,7 +26,10 @@ function fakeEngine(responses: (() => Promise<Run[]>)[]) {
       return { cancel: () => (timer.cancelled = true) };
     },
     onChange: () => changeCount++,
-    toast: (text) => toasts.push(text),
+    toast: (text, timeoutMs) => {
+      toasts.push(text);
+      timeouts.push(timeoutMs);
+    },
     log: (text) => logs.push(text),
   };
 
@@ -34,6 +38,7 @@ function fakeEngine(responses: (() => Promise<Run[]>)[]) {
   return {
     deps,
     toasts,
+    timeouts,
     logs,
     changeCount: () => changeCount,
     calls: () => responseIndex,
@@ -76,9 +81,29 @@ test("a run that finishes becomes a toast and the pace drops to idle", async () 
   poller.start();
   await engine.settle();
   await engine.tick();
-  assert.deepEqual(engine.toasts, ["⚙ a/b: CI Success after 1m30s"]);
+  assert.deepEqual(engine.toasts, ["⚙ a/b: CI passed after 1m30s (main)"]);
   assert.equal(engine.nextDelay(), DEFAULT_CONFIG.idleMs);
   assert.equal(poller.rows().length, 1, "a finished run stays on the band within the hold");
+});
+
+test("one poll's finishes: the successes in one, then each failure on its own, longer; cancelled says nothing", async () => {
+  const workflows = ["CI", "Lint", "Deploy", "Docs", "Release"];
+  const inFlightNow = workflows.map((workflowName, index) => running({ databaseId: index + 1, workflowName }));
+  const conclusions = ["success", "success", "failure", "action_required", "cancelled"];
+  const done = inFlightNow.map((candidate, index) =>
+    run({ ...candidate, status: "completed", conclusion: conclusions[index], updatedAt: at(90_000) }),
+  );
+  const engine = fakeEngine([() => Promise.resolve(inFlightNow), () => Promise.resolve(done)]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  await engine.tick();
+  assert.deepEqual(engine.toasts, [
+    "⚙ a/b: 2 runs passed",
+    "⚙ a/b: Deploy failed after 1m30s (main)",
+    "⚙ a/b: Docs needs you (main)",
+  ]);
+  assert.deepEqual(engine.timeouts, [undefined, 10_000, 10_000]);
 });
 
 test("wake: cancels the timer, enters waiting, and a new run clears the waiting", async () => {

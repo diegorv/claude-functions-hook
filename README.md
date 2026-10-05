@@ -38,9 +38,11 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
   `refs/pull/N/head`); the workflow name links to the run.
 - Shows runs from a push, a pull request, a manual dispatch, the merge
   queue, a release, or a workflow another one started, and leaves cron and
-  issue bots out. Toasts when a run starts or finishes. A finished run stays
-  for 5 minutes; one that failed, timed out or needs you stays until a newer
-  run of the same workflow on that branch shows up, for 30 minutes at most.
+  issue bots out. Toasts when a run starts and when runs finish: one per
+  run that failed or needs you, one for those that passed; a cancelled or
+  skipped run shows only on the band. A finished run stays for 5 minutes;
+  one that failed, timed out or needs you stays until a newer run of the
+  same workflow on that branch shows up, for 30 minutes at most.
 
 ## Use
 

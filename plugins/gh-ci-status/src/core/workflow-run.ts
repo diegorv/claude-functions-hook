@@ -106,7 +106,7 @@ export function phase(run: Run): Phase {
 
 // `cancelled` stays with the rest: a person usually cancelled it.
 const NEEDS_ATTENTION = new Set(["failure", "startup_failure", "timed_out", "action_required"]);
-const needsAttention = (run: Run) => !inFlight(run) && NEEDS_ATTENTION.has(run.conclusion ?? "");
+export const needsAttention = (run: Run) => !inFlight(run) && NEEDS_ATTENTION.has(run.conclusion ?? "");
 const group = (run: Run) => (inFlight(run) ? 0 : needsAttention(run) ? 1 : 2);
 
 // In flight first, then what failed or waits on someone, then the rest; gh's

@@ -1,6 +1,6 @@
 // Text derived from a workflow run: what each band column and toast says.
-import { inFlight, prNumber, type Run } from "./workflow-run.ts";
-import { elapsed } from "../utils/text.ts";
+import { inFlight, needsAttention, phase, prNumber, type Run } from "./workflow-run.ts";
+import { cut, elapsed } from "../utils/text.ts";
 
 // The time column: how long the run has been going, or how long it took.
 export function clock(run: Run, now: number): string {
@@ -38,4 +38,37 @@ export function counts(runs: Run[]): string {
   const running = runs.filter(inFlight).length;
   const finished = runs.length - running;
   return [running ? `${running} running` : "", finished ? `${finished} finished` : ""].filter(Boolean).join(" · ");
+}
+
+export type Toast = { text: string; timeoutMs?: number }; // no timeoutMs: the engine's default (4 s)
+
+const FAILURE_TOAST_MS = 10_000;
+const name = (run: Run) => cut(workflowLabel(run), 60);
+const ref = (run: Run) => cut(branchLabel(run), REF_MAX);
+
+export const startedToast = (repo: string, run: Run): string => `⚙ ${repo}: ${name(run)} started (${ref(run)})`;
+
+// What one poll saw finish: the successes in one toast, first, so on a
+// one-line notification bar a failure is what stays; then each run that needs
+// attention on its own, longer; cancelled, skipped and the like in none, since
+// a person or a newer push usually caused them and the band still shows them.
+export function finishedToasts(repo: string, runs: Run[], now: number): Toast[] {
+  const toasts: Toast[] = [];
+  const passed = runs.filter((run) => run.conclusion === "success");
+  if (passed.length === 1) {
+    const [run] = passed;
+    toasts.push({ text: `⚙ ${repo}: ${name(run)} passed after ${clock(run, now)} (${ref(run)})` });
+  } else if (passed.length > 1) {
+    toasts.push({ text: `⚙ ${repo}: ${passed.length} runs passed` });
+  }
+  for (const run of runs.filter(needsAttention)) {
+    toasts.push({
+      text:
+        run.conclusion === "action_required"
+          ? `⚙ ${repo}: ${name(run)} needs you (${ref(run)})`
+          : `⚙ ${repo}: ${name(run)} ${phase(run).label.toLowerCase()} after ${clock(run, now)} (${ref(run)})`,
+      timeoutMs: FAILURE_TOAST_MS,
+    });
+  }
+  return toasts;
 }
