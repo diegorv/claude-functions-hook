@@ -48,7 +48,10 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 claude --plugin-dir /path/to/claude-mods-diegorv/plugins
 ```
 
-Or install them from the marketplace:
+Under `--plugin-dir`, edits to a plugin's files reload it without restarting
+the session.
+
+Or install them from the marketplace on GitHub:
 
 ```
 /plugin marketplace add diegorv/claude-mods-diegorv
@@ -56,9 +59,25 @@ Or install them from the marketplace:
 /plugin install time@claude-mods-diegorv
 ```
 
+Or from a local clone, by the path of its root (the folder with
+`.claude-plugin/marketplace.json`, not `plugins/`):
+
+```
+/plugin marketplace add /path/to/claude-mods-diegorv
+/plugin install gh-ci-status@claude-mods-diegorv
+/plugin install time@claude-mods-diegorv
+```
+
+A marketplace added from a local path loads its plugins in place, so edits
+need no version bump or reinstall; they take effect at the next session start
+or `/reload-plugins`, not on save as under `--plugin-dir`. Both marketplaces
+are named `claude-mods-diegorv`, and only one marketplace per name can be
+registered, so remove one before adding the other.
+
 The marketplace was renamed, and the install ids with it. If you installed
 under the old name, run `/plugin marketplace remove claude-function-hooks`,
-which also uninstalls its plugins, then the three lines above.
+which also uninstalls its plugins, then one of the two marketplace blocks
+above.
 
 Tested with Claude Code 2.1.289; the API may still change between releases.
 `/plugin` names the mods the session loaded, in a line such as
@@ -70,9 +89,6 @@ off every installed mod, start the session with `--safe-mode`, which also
 disables your other customizations, or, for every session, set
 `"disableAllHooks": true` in `~/.claude/settings.json`, which also stops your
 settings hooks and custom status line.
-
-Under `--plugin-dir`, edits to a plugin's files reload it without restarting
-the session.
 
 ## Develop
 
