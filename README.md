@@ -8,6 +8,7 @@ hooks module (TypeScript, here) runs inside the session. Mods need Claude Code
 | --- | --- |
 | [time](plugins/time) | The time you sent each message, drawn above it |
 | [gh-ci-status](plugins/gh-ci-status) | GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run |
+| [activity-log](plugins/activity-log) | Every event of the session, tool calls and their full results included, appended to a JSONL file per session |
 
 ## time
 
@@ -52,12 +53,60 @@ main  ● Success    Deploy   2m15s  Release 1.4.0
 - `/gh-ci` opens or closes the same pane, band or not; before the repo is
   found it looks again and says so.
 
+## activity-log
+
+Writes everything the session does to
+`~/.claude/activity-log/<date>-<sessionId>.jsonl`, one JSON object per line.
+The date is the local date of the session's first line; after a `/clear` the
+lines go to a new file, under the new session id.
+
+- Each event is two lines with the same `seq`: a `start` line with the
+  event's input (and `origin`, who raised it), written before the event runs,
+  then an `end` line with its result and `durationMs`, or an `error` line.
+  Tool calls, the rows the conversation keeps, the model's requests, prompts,
+  commands, agents and the `$` calls of other plugins are all there.
+- The content is whole, nothing cut: a tool's full input and result, every
+  message. An event that runs in a subagent has its `agentId` on the start
+  line. The model's response and a plugin's spawned process stream; their
+  end line lists the `chunks`, which pass through unchanged as they come.
+- The files hold everything the session saw, secrets included. The folder is
+  made 700 and each file 600, but nothing is redacted: delete what you do not
+  want kept.
+- Left out: `ui.render` and `ui.resolve`, which fire for each component on
+  every redraw, and this plugin's own calls. Telemetry is only the
+  `collector` stream of `telemetry.log`; the `anthropic` stream, and
+  `telemetry.mark` with it, is closed to installed plugins.
+- It is large: about 2 MB for a one-line prompt, mostly `tool.describe`,
+  `command.describe` and the `$` calls of other plugins.
+- Lines are written about once a second and at session end. After a hot
+  reload of the plugin, `seq` starts again at 0 in the same file, and the
+  last second of lines may be lost.
+
+Reading it with `jq`:
+
+```bash
+# tool calls, with input and result side by side
+jq -s -c 'map(select(.event == "tool.call")) | group_by(.seq)[]
+  | {tool: .[0].input.tool, agentId: .[0].agentId, input: .[0].input, result: .[1].result}' FILE
+
+# one subagent's lines (its ids: jq -r '.agentId // empty' FILE | sort -u)
+jq -s -c --arg id AGENT_ID 'map(select(.agentId == $id) | .seq) as $seqs
+  | .[] | select(.seq | IN($seqs[]))' FILE
+
+# how many of each event
+jq -r 'select(.phase == "start") | .event' FILE | sort | uniq -c | sort -rn
+```
+
 ## Use
 
 ```bash
 # mods need Claude Code 2.1.287 or later
 claude --plugin-dir /path/to/claude-mods-diegorv/plugins
 ```
+
+That folder loads activity-log too, which writes everything the session sees
+to disk; to leave it out, point `--plugin-dir` at single plugins instead
+(`--plugin-dir plugins/time`).
 
 Under `--plugin-dir`, edits to a plugin's files reload it without restarting
 the session.
@@ -66,6 +115,7 @@ Or install them from the marketplace on GitHub:
 
 ```
 /plugin marketplace add diegorv/claude-mods-diegorv
+/plugin install activity-log@claude-mods-diegorv
 /plugin install gh-ci-status@claude-mods-diegorv
 /plugin install time@claude-mods-diegorv
 ```
@@ -75,6 +125,7 @@ Or from a local clone, by the path of its root (the folder with
 
 ```
 /plugin marketplace add /path/to/claude-mods-diegorv
+/plugin install activity-log@claude-mods-diegorv
 /plugin install gh-ci-status@claude-mods-diegorv
 /plugin install time@claude-mods-diegorv
 ```
