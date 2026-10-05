@@ -9,6 +9,7 @@ export type BandInput = {
   repo: string;
   rows: Run[];
   waitingSince: number | null; // a recent push with no run yet, or null
+  staleSince: number | null; // when gh started failing, while it still does
   now: number;
   maxRows: number; // rows the band may take, every line of it included
   columns: number; // cells a row may take: the AbovePrompt's bodyColumns
@@ -31,6 +32,7 @@ export type BandModel = {
   actions: Cell;
   counts: string;
   waitingFor: string | null; // elapsed since the push, while no run has shown up
+  stale: string | null; // "gh error for 2m05s", while gh fails and the rows are from before
   rows: RowModel[];
   hiddenCount: number;
 };
@@ -42,6 +44,7 @@ const PHASE_CELLS = 2 + LABEL_WIDTH; // the dot, a space, the label
 const REF_FLOOR = 6; // "#12345"
 const WORKFLOW_FLOOR = 8;
 const TITLE_FLOOR = 10;
+const STALE_ALONE_MS = 2 * 60_000; // an outage with nothing else to show draws the band only past a blip
 
 const spaces = (count: number) => " ".repeat(Math.max(0, count));
 const cell = (text: string, href: string | null, width = cells(text)): Cell => ({
@@ -72,11 +75,14 @@ export function columnWidths(needed: Widths, columns: number): Widths {
 
 const widest = (texts: string[]) => Math.max(0, ...texts.map(cells));
 
-// Null when there is nothing to draw: no rows and no push being waited on.
+// Null when there is nothing to draw: no rows, no push being waited on, and no gh outage past a blip.
 export function bandModel(input: BandInput): BandModel | null {
   const waitingFor =
     input.waitingSince !== null && !input.rows.some(inFlight) ? elapsed(input.now - input.waitingSince) : null;
-  if (input.rows.length === 0 && waitingFor === null) return null;
+  const staleFor = input.staleSince !== null ? input.now - input.staleSince : null;
+  const stale = staleFor !== null ? `gh error for ${elapsed(staleFor)}` : null;
+  const staleAlone = staleFor !== null && staleFor >= STALE_ALONE_MS;
+  if (input.rows.length === 0 && waitingFor === null && !staleAlone) return null;
 
   // The runs get what the header and the waiting line leave; when they don't
   // all fit, one row of that goes to the "more" line. From 3 rows up the tree
@@ -111,6 +117,7 @@ export function bandModel(input: BandInput): BandModel | null {
     actions: cell("Actions", `https://github.com/${input.repo}/actions`),
     counts: counts(input.rows),
     waitingFor,
+    stale,
     rows,
     hiddenCount: input.rows.length - shown.length,
   };

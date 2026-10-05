@@ -9,6 +9,7 @@ const input = (overrides: Partial<BandInput> = {}): BandInput => ({
   repo: "a/b",
   rows: [],
   waitingSince: null,
+  staleSince: null,
   now: T0 + 60_000,
   maxRows: 6,
   columns: 120,
@@ -24,6 +25,21 @@ test("header: repo and Actions link; counts follow", () => {
   assert.deepEqual(model.repo, { text: "a/b", href: "https://github.com/a/b", pad: "" });
   assert.equal(model.actions.href, "https://github.com/a/b/actions");
   assert.equal(model.counts, "1 running · 1 finished");
+});
+
+test("stale: the header says since when gh fails; clocks keep counting", () => {
+  const model = bandModel(input({ rows: [running()], staleSince: T0 + 15_000 }))!;
+  assert.equal(model.stale, "gh error for 0m45s");
+  assert.equal(model.rows[0].clock, "1m00s");
+  assert.equal(bandModel(input({ rows: [running()] }))!.stale, null);
+});
+
+test("stale: with no rows, the band shows an outage once it has lasted 2 minutes", () => {
+  assert.equal(bandModel(input({ staleSince: T0 - 60_000 }))!.stale, "gh error for 2m00s");
+});
+
+test("stale: with no rows, an outage under 2 minutes draws nothing", () => {
+  assert.equal(bandModel(input({ staleSince: T0 })), null);
 });
 
 test("waiting: shown only after a push with nothing in flight", () => {

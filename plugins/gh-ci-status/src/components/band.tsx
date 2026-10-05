@@ -22,6 +22,7 @@ export function Band({ Box, Text, Link }: Elements, model: BandModel) {
         {" · "}
         {anchor(model.actions)}
         {model.counts ? ` · ${model.counts}` : ""}
+        {model.stale ? ` · ${model.stale}` : ""}
       </Text>
       {model.waitingFor !== null ? (
         <Text dimColor wrap="truncate-end">{`◌ waiting for a run   ${model.waitingFor}`}</Text>

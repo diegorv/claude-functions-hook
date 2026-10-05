@@ -249,3 +249,25 @@ test("a gh error is logged once per outage and polling continues", async () => {
   assert.deepEqual(engine.logs, ["a", "b"], "a poll that works ends the outage, so the next one logs again");
   assert.equal(poller.rows().length, 0);
 });
+
+test("staleSince: set at the first failed poll, kept through the outage, cleared by the next good one", async () => {
+  const engine = fakeEngine([
+    () => Promise.resolve([running()]),
+    () => Promise.reject(new Error("gh: offline")),
+    () => Promise.reject(new Error("gh: offline")),
+    () => Promise.resolve([running()]),
+  ]);
+  const poller = createPoller("a/b", engine.deps);
+  poller.start();
+  await engine.settle();
+  assert.equal(poller.staleSince(), null);
+  await engine.tick();
+  const failedAt = T0 + DEFAULT_CONFIG.activeMs;
+  assert.equal(poller.staleSince(), failedAt);
+  assert.equal(poller.rows().length, 1, "the rows from before stay");
+  await engine.tick();
+  assert.equal(poller.staleSince(), failedAt, "a second failure keeps the outage's start");
+  await engine.tick();
+  assert.equal(poller.staleSince(), null);
+  assert.equal(engine.changeCount(), 4, "every poll, failed or not, asks for a redraw");
+});

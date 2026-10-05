@@ -35,7 +35,7 @@ export const register: Register = (on) => {
           after: (ms, callback) => $.clock.after(ms, callback),
           onChange: () => $.ui.invalidate("ui.render"),
           toast: (text, timeoutMs) => $.ui.toast(text, timeoutMs ? { timeoutMs } : undefined),
-          log: (text) => $.ui.log(text),
+          log: (text) => $.ui.log(text, { to: "debug" }), // the band's header shows the outage
         });
         watch = { repo, poller };
         poller.start();
@@ -44,7 +44,7 @@ export const register: Register = (on) => {
           void $.clock.now().then(
             (time) => {
               now = time;
-              if (poller.live()) $.ui.invalidate("ui.render");
+              if (poller.live() || poller.staleSince() !== null) $.ui.invalidate("ui.render");
             },
             () => {},
           );
@@ -69,6 +69,7 @@ export const register: Register = (on) => {
       repo,
       rows: poller.rows(),
       waitingSince: poller.waitingSince(),
+      staleSince: poller.staleSince(),
       now,
       maxRows: event.props.maxRows,
       columns: event.props.bodyColumns,

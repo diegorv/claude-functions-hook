@@ -47,6 +47,7 @@ export type Poller = {
   rows: () => Run[];
   waitingSince: () => number | null; // when the push happened, while no run has shown up
   live: () => boolean; // something on the band is counting up: a run in flight, or a push being waited on
+  staleSince: () => number | null; // when gh started failing, while it still does: the rows are from before
 };
 
 export function createPoller(repo: string, deps: PollerDeps, config: PollerConfig = DEFAULT_CONFIG): Poller {
@@ -54,7 +55,7 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
   let pushedAt: number | null = null;
   let seen: ReadonlySet<number> = new Set();
   let firstPoll = true; // the first poll only learns what is already running, without notifying
-  let errorLogged = false; // one line per outage, not one per poll
+  let staleSince: number | null = null; // the first failed poll of the current outage
   let timer: Timer | null = null;
   let polling = false; // one poll at a time: a wake mid-poll must not start a second chain of timers
 
@@ -66,11 +67,11 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
   const fetchRuns = async (): Promise<Run[] | null> => {
     try {
       const [runs, prs] = await Promise.all([deps.listRuns(), deps.listPrs().catch(() => [] as Pr[])]);
-      errorLogged = false;
+      staleSince = null;
       return withPrs(runs.filter(startedByPerson), prs);
     } catch (error) {
-      if (!errorLogged) deps.log(error instanceof Error ? error.message : String(error));
-      errorLogged = true;
+      if (staleSince === null) deps.log(error instanceof Error ? error.message : String(error)); // one line per outage
+      staleSince ??= deps.now();
       return null;
     }
   };
@@ -127,5 +128,6 @@ export function createPoller(repo: string, deps: PollerDeps, config: PollerConfi
     rows: () => visible(rows, deps.now(), config.holdMs),
     waitingSince,
     live,
+    staleSince: () => staleSince,
   };
 }
