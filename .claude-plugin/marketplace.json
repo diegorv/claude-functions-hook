@@ -13,6 +13,11 @@
       "name": "activity-log",
       "source": "./plugins/activity-log",
       "description": "Every event of the session, tool calls and their full results included, appended to a JSONL file per session"
+    },
+    {
+      "name": "agent-flow",
+      "source": "./plugins/agent-flow",
+      "description": "A live tree of the session's subagents and teammates in a pane: status, current tool, time, calls and tokens"
     }
   ]
 }

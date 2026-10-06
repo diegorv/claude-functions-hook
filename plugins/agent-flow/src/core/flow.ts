@@ -23,7 +23,7 @@ export type FlowNode = {
   calls: Call[]; // oldest first
   toolCalls: number; // ended calls
   tokens: number; // input + output, summed over the loop's turns
-  misses: number; // lists in a row the node was absent from while alive
+  isListed: boolean; // some list named it: only such a node can be judged gone
 };
 
 export type FlowState = { root: FlowNode; agents: Record<string, FlowNode> };
@@ -40,7 +40,6 @@ export type TurnEnd = Pick<TurnCompleteInput, "agentId" | "reason" | "usage">;
 export type Listed = Pick<AgentInfo, "id" | "type" | "description" | "status" | "parentId" | "name" | "teammateId">;
 
 const ENDED: readonly Status[] = ["completed", "failed", "killed", "gone"];
-const GONE_AFTER_MISSES = 2; // one list may be read before a spawn it races with
 
 export const isEnded = (status: Status): boolean => ENDED.includes(status);
 
@@ -59,7 +58,7 @@ function node(id: string, now: number, facts: Partial<FlowNode> = {}): FlowNode 
     calls: [],
     toolCalls: 0,
     tokens: 0,
-    misses: 0,
+    isListed: false,
     ...facts,
   };
 }
@@ -159,15 +158,15 @@ export function onTurnComplete(state: FlowState, turn: TurnEnd, now: number): Fl
 
 // What `$.agent.list()` answers has the last word on status and fills a
 // parent the events never gave. Its name is taken for a teammate only (for
-// another agent it is the engine's handle, not a label). A node alive by the events but
-// absent from GONE_AFTER_MISSES lists in a row is gone.
+// another agent it is the engine's handle, not a label). A node alive by the events
+// that a list named and the next one leaves out is gone; one no list ever named
+// (a loop the list may not cover, or a spawn the list was read before) is left to its events.
 export function reconcile(state: FlowState, listed: readonly Listed[], now: number): FlowState {
   const agents: Record<string, FlowNode> = {};
   const seen = new Set(listed.map((info) => info.id));
   for (const loop of Object.values(state.agents)) {
-    if (seen.has(loop.id) || isEnded(loop.status)) agents[loop.id] = loop;
-    else if (loop.misses + 1 < GONE_AFTER_MISSES) agents[loop.id] = { ...loop, misses: loop.misses + 1 };
-    else agents[loop.id] = { ...loop, status: "gone", endedAt: now, lastEventAt: now, calls: [], misses: 0 };
+    if (seen.has(loop.id) || isEnded(loop.status) || !loop.isListed) agents[loop.id] = loop;
+    else agents[loop.id] = { ...loop, status: "gone", endedAt: now, lastEventAt: now, calls: [] };
   }
   for (const info of listed) {
     const existing = agents[info.id];
@@ -183,7 +182,7 @@ export function reconcile(state: FlowState, listed: readonly Listed[], now: numb
       calls: isEnded(info.status) ? [] : base.calls,
       parentId: base.parentId ?? info.parentId ?? null,
       name: info.teammateId !== undefined ? (info.name ?? base.name) : base.name,
-      misses: 0,
+      isListed: true,
     };
   }
   return { ...state, agents };

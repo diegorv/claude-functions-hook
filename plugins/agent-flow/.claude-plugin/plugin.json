@@ -1,0 +1,6 @@
+{
+  "name": "agent-flow",
+  "version": "0.1.0",
+  "author": { "name": "Diego R. v." },
+  "description": "A live tree of the session's subagents and teammates in a pane: status, current tool, time, calls and tokens"
+}

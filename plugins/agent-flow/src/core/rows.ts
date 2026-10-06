@@ -41,9 +41,10 @@ export function tokens(count: number): string {
 
 const waitingCall = (loop: FlowNode): Call | undefined => loop.calls.find((call) => call.isWaiting);
 
+// An Agent call runs as long as the foreground child it waits for, whose own row shows how that goes.
 function signalOf(loop: FlowNode, isRoot: boolean, now: number): Signal {
   if (waitingCall(loop)) return "approval";
-  const oldest = loop.calls[0];
+  const oldest = loop.calls.find((call) => call.tool !== "Agent");
   if (oldest && now - oldest.since > SLOW_TOOL_MS) return "slow-tool";
   if (!isRoot && loop.status === "running" && now - loop.lastEventAt > STALE_MS) return "stale";
   return null;

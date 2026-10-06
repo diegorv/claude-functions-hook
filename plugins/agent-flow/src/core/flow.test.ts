@@ -194,12 +194,11 @@ test("the list adds the agents no spawn showed, a teammate by its teammateId", (
   assert.equal(state.agents.t?.isTeammate, true);
 });
 
-test("a live node absent from two lists in a row is gone; an ended one stays", () => {
+test("a live node a list named and the next one leaves out is gone; an ended one stays", () => {
   let state = onToolStart(withAgent(), { agentId: "a1", tool: "Read", tool_use_id: "t1" }, T0);
   state = onSpawn(state, spawn, { model: "x", agentId: "a2" }, T0);
+  state = reconcile(state, [listed()], T0 + 1);
   state = onTurnComplete(state, { agentId: "a2", reason: "answer" }, T0 + 1);
-  state = reconcile(state, [], T0 + 2);
-  assert.equal(state.agents.a1?.status, "running");
   state = reconcile(state, [], T0 + 4);
   assert.equal(state.agents.a1?.status, "gone");
   assert.equal(state.agents.a1?.endedAt, T0 + 4);
@@ -207,9 +206,9 @@ test("a live node absent from two lists in a row is gone; an ended one stays", (
   assert.equal(state.agents.a2?.status, "completed");
 });
 
-test("being listed again resets the misses", () => {
+test("a node no list ever named is left to its events", () => {
   let state = reconcile(withAgent(), [], T0 + 2);
-  state = reconcile(state, [listed()], T0 + 4);
+  state = reconcile(state, [], T0 + 4);
   state = reconcile(state, [], T0 + 6);
   assert.equal(state.agents.a1?.status, "running");
 });

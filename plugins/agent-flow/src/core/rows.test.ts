@@ -111,6 +111,12 @@ test("signals: approval over a slow call over a stale agent; the main loop is ne
   assert.equal(rowsOf(state, T0 + 200_000)[0]?.signal, "approval");
 });
 
+test("an Agent call is never slow: it lasts as long as its foreground child", () => {
+  const state = onToolStart(onTurnStart(initialState(T0), T0), { tool: "Agent", tool_use_id: "t" }, T0);
+  assert.equal(rowsOf(state, T0 + 60_000)[0]?.signal, null);
+  assert.equal(rowsOf(state, T0 + 60_000)[0]?.activity, "Agent 1m00s");
+});
+
 test("counts: agents alive and not idle, ended, loops waiting for approval, the main one too", () => {
   let state = add(add(add(initialState(T0), "a"), "b"), "c");
   state = onTurnComplete(state, { agentId: "b", reason: "answer" }, T0);
