@@ -9,6 +9,7 @@ hooks module (TypeScript, here) runs inside the session. Mods need Claude Code
 | [time](plugins/time) | The time you sent each message, drawn above it |
 | [gh-ci-status](plugins/gh-ci-status) | GitHub Actions runs of the session's repo, pinned above the prompt, with links to the PR and the run |
 | [activity-log](plugins/activity-log) | Every event of the session, tool calls and their full results included, appended to a JSONL file per session |
+| [agent-flow](plugins/agent-flow) | A live tree of the session's subagents and teammates in a pane: status, current tool, time, calls and tokens |
 
 ## time
 
@@ -98,6 +99,49 @@ jq -s -c --arg id AGENT_ID 'map(select(.agentId == $id) | .seq) as $seqs
 jq -r 'select(.phase == "start") | .event' FILE | sort | uniq -c | sort -rn
 ```
 
+## agent-flow
+
+```
+2 running · 1 done · 1 waiting
+● main · running 1m24s · Agent 1m23s
+  ● general-purpose: find the auth flow · running 1m23s · Grep 4s · 7 calls
+    ✓ Explore: read the session store · completed 36s · 12 calls · 20.4k tok
+  ● general-purpose: run the test suite · running 1m22s · waiting for approval: Bash · 3 calls
+```
+
+- `/flow` opens a pane with the main loop and every subagent and teammate
+  under the loop that spawned it; `/flow` again closes it. The pane does not
+  take the keyboard. Terminal only.
+- A row: status glyph, type and name (or the task's description), status and
+  elapsed time, the oldest tool call in flight and how long it has run, the
+  calls ended, and once the agent ended its tokens. The header counts the
+  agents running, those done, and the loops waiting for approval.
+- A row stands out (bold, colored) while its loop waits for approval, while a
+  tool call has run over 30 s (an `Agent` call, which lasts as long as its
+  child, does not count), or while a running agent has had no event for 2
+  minutes. Ended rows are dimmed.
+- The tree comes from the engine's events (`agent.spawn`, `tool.call`,
+  `turn.start`, `turn.complete`, and `classic.PermissionRequest` when no
+  settings hook decided it), checked against `$.agent.list()` every 2 s while
+  something runs and the pane is open; the list has the last word on status.
+  An agent the list named once and then left out is marked gone.
+- Tokens are uncached input plus output, summed over the agent's turns;
+  cache reads and writes are left out.
+- "waiting for approval" stays until the tool call ends, approved or not: no
+  event carries the person's answer. In auto or dontAsk mode, or for a
+  background subagent, it can show briefly before an automatic deny; it
+  clears when the call ends.
+- The engine's own forks (compaction, memory) are not shown, and events from
+  loops no spawn or list named (a workflow's agents) are ignored.
+- `/clear` and `/resume` start the tree empty; a background agent that
+  survives `/clear` comes back once the list names it (while something runs
+  with the pane open). A reload of the plugin starts it empty too; run
+  `/flow` to draw the pane again, and running agents come back once the list
+  names them.
+- Based on the idea of
+  [claude-agent-flow](https://github.com/Charlie0113-T/claude-agent-flow) by
+  Charlie0113-T (Apache-2.0); no code is copied.
+
 ## Use
 
 ```bash
@@ -117,6 +161,7 @@ Or install them from the marketplace on GitHub:
 ```
 /plugin marketplace add diegorv/claude-mods-diegorv
 /plugin install activity-log@claude-mods-diegorv
+/plugin install agent-flow@claude-mods-diegorv
 /plugin install gh-ci-status@claude-mods-diegorv
 /plugin install time@claude-mods-diegorv
 ```
@@ -127,6 +172,7 @@ Or from a local clone, by the path of its root (the folder with
 ```
 /plugin marketplace add /path/to/claude-mods-diegorv
 /plugin install activity-log@claude-mods-diegorv
+/plugin install agent-flow@claude-mods-diegorv
 /plugin install gh-ci-status@claude-mods-diegorv
 /plugin install time@claude-mods-diegorv
 ```
